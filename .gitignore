@@ -1,0 +1,10 @@
+# VS folder and temp files
+.vs/
+*.ipch
+*.pdb
+*.db
+*.sdf
+*.obj
+*.log
+Debug/
+Release/

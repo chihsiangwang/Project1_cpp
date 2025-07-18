@@ -1,4 +1,4 @@
-
+ï»¿
 #include <windows.h>
 
 // ANSI C++ headers
@@ -14,9 +14,16 @@
 #include <Ishtar/Task/TaskFwd.h>
 #include <Ishtar/ThreadPool.h>
 
+//#include <Ishtar/Thread/Mutex.h>
+#include <iostream>
+#include <boost/bind.hpp>
+#include <mutex>
+
 //#include "../../Ishtar/src/Ishtar/Thread/ThreadImpl.h"
 //#include <boost/thread.hpp>
 
+
+#include <Gt2/Database/DatabaseManager.h>
 
 using namespace std;
 using namespace Ishtar;
@@ -24,7 +31,7 @@ using namespace Ishtar;
 
 // ===================================================== //
 
-// hello ¨ç¦¡
+// hello å‡½å¼
 /*void hello()
 {
     cout << "Hello, World!! 123" << endl;
@@ -32,16 +39,16 @@ using namespace Ishtar;
 }
 
 
-// ·s¼W¤@­Ó inline ¨ç¦¡
+// æ–°å¢ä¸€å€‹ inline å‡½å¼
 inline void printSeparator() {
     cout << "====================" << endl << endl;
 }
 
 
-// marco©w¸q
+// marcoå®šç¾©
 #define PI 3.14159
 
-// marco©w¸q±ø¥ó
+// marcoå®šç¾©æ¢ä»¶
 #ifdef _WIN64
 void printDebugMode() {
     cout << "Debug mode _WIN64" << endl;
@@ -68,10 +75,10 @@ void printDebugMode() {
 }
 #endif
 
-// ´ú¸Õ«ü¼Ğ©M¤Ş¥Î
+// æ¸¬è©¦æŒ‡æ¨™å’Œå¼•ç”¨
 void testPointer() {
     int a = 10;
-    int* p = &a; // «ü¼Ğ p «ü¦VÅÜ¼Æ a ªº¦a§}
+    int* p = &a; // æŒ‡æ¨™ p æŒ‡å‘è®Šæ•¸ a çš„åœ°å€
 
     cout << "Value of a: " << a << endl;
     cout << "Address of a: " << &a << endl; 
@@ -82,20 +89,20 @@ void testPointer() {
 	cout << "Size of pointer p: " << sizeof(p) << " bytes" << endl;
 }
 
-// ´ú¸Õ¤Ş¥Î
+// æ¸¬è©¦å¼•ç”¨
 void testAddress() 
 {
 
     int b = 5;
-    int& a = b; // Åı a ¬O b ªº§O¦W(alias)
+    int& a = b; // è®“ a æ˜¯ b çš„åˆ¥å(alias)
 
     a = 6;
 	cout << "Value of b: " << b << endl; // 6
     cout << "Value of a: " << a << endl; // 6
 
     cout << "Address of b: " << &b << endl;
-    cout << "Address of a: " << &a << endl; // ¨âªÌ¦a§}¬Û¦P
-	cout << "Size of reference a: " << sizeof(a) << " bytes" << endl; // ¤Ş¥Î¤j¤p»P­ìÅÜ¼Æ¬Û¦P
+    cout << "Address of a: " << &a << endl; // å…©è€…åœ°å€ç›¸åŒ
+	cout << "Size of reference a: " << sizeof(a) << " bytes" << endl; // å¼•ç”¨å¤§å°èˆ‡åŸè®Šæ•¸ç›¸åŒ
 }
 
 
@@ -105,7 +112,7 @@ auto add(T a, T b) -> decltype(a + b)
     return a + b;
 }
 
-// ´ú¸Õ¼ÒªO¨ç¦¡
+// æ¸¬è©¦æ¨¡æ¿å‡½å¼
 void testAddTemplate() 
 {
 	cout << "Testing add template function:" << endl;
@@ -132,31 +139,31 @@ void testVector()
 
 // ===================================================== //
 
-int counter = 0;  // ¦@¨ÉÅÜ¼Æ
+int counter = 0;  // å…±äº«è®Šæ•¸
 
 // Test thread
 int myThreadFunction() 
 {
-    // ©w¸q¤@­Ó°õ¦æºü­n°õ¦æªº¨ç¦¡
-    cout << "°õ¦æºü¶}©l°õ¦æ¡I" << endl;
+    // å®šç¾©ä¸€å€‹åŸ·è¡Œç·’è¦åŸ·è¡Œçš„å‡½å¼
+    cout << "åŸ·è¡Œç·’é–‹å§‹åŸ·è¡Œï¼" << endl;
 
-    // ¼ÒÀÀ¤u§@
-    Ishtar::Thread::Sleep(1000); // ¥ğ¯v 1 ¬í
+    // æ¨¡æ“¬å·¥ä½œ
+    Ishtar::Thread::Sleep(1000); // ä¼‘çœ  1 ç§’
 
-    cout << "°õ¦æºüµ²§ô¡I" << endl;
+    cout << "åŸ·è¡Œç·’çµæŸï¼" << endl;
 
     return 0;
 
 }
 void testThread() 
 {
-    Thread thread;
+    Thread thread1;
     
-    // ¨Ï¥Î Start ±Ò°Ê°õ¦æºü
-    thread.Start("MyThread", myThreadFunction);
+    // ä½¿ç”¨ Start å•Ÿå‹•åŸ·è¡Œç·’
+    thread1.Start("MyThread", myThreadFunction);
 
-    // µ¥«İ°õ¦æºüµ²§ô
-    thread.Join();
+    // ç­‰å¾…åŸ·è¡Œç·’çµæŸ
+    thread1.Join();
 }
 
 
@@ -175,35 +182,35 @@ public:
 
     virtual Int Execute() override
     {
-        cout << "°õ¦æºü¥i°õ¦æª«¥ó¶}©l°õ¦æ¡I" << endl;
+        cout << "åŸ·è¡Œç·’å¯åŸ·è¡Œç‰©ä»¶é–‹å§‹åŸ·è¡Œï¼" << endl;
 
-        // ¼ÒÀÀ¤u§@
-        //Ishtar::Thread::Sleep(1000); // ¥ğ¯v 1 ¬í
+        // æ¨¡æ“¬å·¥ä½œ
+        //Ishtar::Thread::Sleep(1000); // ä¼‘çœ  1 ç§’
         if (m_counter < 100) 
         {
             ++m_counter;
-			cout << "°õ¦æºü¥i°õ¦æª«¥ó­p¼Æ¾¹: " << m_counter << endl;
-			return EXECUTE_CONTINUE; // ªğ¦^ EXECUTE_CONTINUE ¥HÄ~Äò°õ¦æ
+			cout << "åŸ·è¡Œç·’å¯åŸ·è¡Œç‰©ä»¶è¨ˆæ•¸å™¨: " << m_counter << endl;
+			return EXECUTE_CONTINUE; // è¿”å› EXECUTE_CONTINUE ä»¥ç¹¼çºŒåŸ·è¡Œ
         }
         else 
         {
-			return EXECUTE_EXIT; // ªğ¦^ EXECUTE_EXIT ¥Hµ²§ô°õ¦æ
+			return EXECUTE_EXIT; // è¿”å› EXECUTE_EXIT ä»¥çµæŸåŸ·è¡Œ
         }
         
-        cout << "°õ¦æºü¥i°õ¦æª«¥óµ²§ô¡I" << endl;
+        cout << "åŸ·è¡Œç·’å¯åŸ·è¡Œç‰©ä»¶çµæŸï¼" << endl;
     }
 
 private:
-    std::string m_name; // °õ¦æºü¦WºÙ
-    int m_counter = 0; // ­p¼Æ¾¹
+    std::string m_name; // åŸ·è¡Œç·’åç¨±
+    int m_counter = 0; // è¨ˆæ•¸å™¨
 };
 void testExecutable()
 {
     ThreadExecutableClass* tc1 = new ThreadExecutableClass("MyThreadExecutable", 0);
     Ishtar::Thread t1;
 
-    t1.Start(tc1); // ±Ò°Ê°õ¦æºü
-    t1.Join(); // µ¥«İ°õ¦æºüµ²§ô
+    t1.Start(tc1); // å•Ÿå‹•åŸ·è¡Œç·’
+    t1.Join(); // ç­‰å¾…åŸ·è¡Œç·’çµæŸ
 }
 
 
@@ -221,35 +228,35 @@ public:
 
     virtual Int Execute() override
     {
-        cout << "°õ¦æºü°õ¦æ¶}©l¡I" << endl;
+        cout << "åŸ·è¡Œç·’åŸ·è¡Œé–‹å§‹ï¼" << endl;
 
         if (m_counter < 100)
         {
             ++m_counter;
-            cout << "°õ¦æºü¥i°õ¦æª«¥ó­p¼Æ¾¹: " << m_counter << endl;
-            return EXECUTE_CONTINUE; // ªğ¦^ EXECUTE_CONTINUE ¥HÄ~Äò°õ¦æ
+            cout << "åŸ·è¡Œç·’å¯åŸ·è¡Œç‰©ä»¶è¨ˆæ•¸å™¨: " << m_counter << endl;
+            return EXECUTE_CONTINUE; // è¿”å› EXECUTE_CONTINUE ä»¥ç¹¼çºŒåŸ·è¡Œ
         }
         else
         {
-            return EXECUTE_EXIT; // ªğ¦^ EXECUTE_EXIT ¥Hµ²§ô°õ¦æ
+            return EXECUTE_EXIT; // è¿”å› EXECUTE_EXIT ä»¥çµæŸåŸ·è¡Œ
         }
 
-        cout << "°õ¦æºü°õ¦æµ²§ô¡I" << endl;
+        cout << "åŸ·è¡Œç·’åŸ·è¡ŒçµæŸï¼" << endl;
     }
 
 private:
-    std::string m_name; // °õ¦æºü¦WºÙ
-	int m_counter = 0; // ­p¼Æ¾¹
+    std::string m_name; // åŸ·è¡Œç·’åç¨±
+	int m_counter = 0; // è¨ˆæ•¸å™¨
 };
 void testThreadExecution()
 {
     MyThreadExecution* myExec = new MyThreadExecution("MyThreadExecution");
-    myExec->Start(); // ±Ò°Ê°õ¦æºü
-    myExec->Join(); // µ¥«İ°õ¦æºüµ²§ô
+    myExec->Start(); // å•Ÿå‹•åŸ·è¡Œç·’
+    myExec->Join(); // ç­‰å¾…åŸ·è¡Œç·’çµæŸ
 
     //MyThreadExecution myExec2("MyThreadExecution2");
-    //myExec2.Start(); // ±Ò°Ê°õ¦æºü
-    //myExec2.Join(); // µ¥«İ°õ¦æºüµ²§ô
+    //myExec2.Start(); // å•Ÿå‹•åŸ·è¡Œç·’
+    //myExec2.Join(); // ç­‰å¾…åŸ·è¡Œç·’çµæŸ
 }
 
 
@@ -258,22 +265,22 @@ void threadTaskFunction()
 {
     for (int i = 0; i < 1000; ++i)
     {
-        ++counter;  // «D­ì¤l¾Ş§@¡A¥i¯à²£¥Í race condition
+        ++counter;  // éåŸå­æ“ä½œï¼Œå¯èƒ½ç”¢ç”Ÿ race condition
         cout << "now counter: " << counter << endl;
     }
 }
 int MyThreadGroupFunction()
 {
-	threadTaskFunction(); // °õ¦æ¥ô°È¨ç¦¡
+	threadTaskFunction(); // åŸ·è¡Œä»»å‹™å‡½å¼
     return EXECUTE_CONTINUE;
 }
 void MyThreadGroupVoidFunction()
 {
-    threadTaskFunction(); // °õ¦æ¥ô°È¨ç¦¡
+    threadTaskFunction(); // åŸ·è¡Œä»»å‹™å‡½å¼
 }
 void testThreadGroup()
 {
-    // ´ú¸Õ Ishtar::ThreadGroup ªº¨Ï¥Î
+    // æ¸¬è©¦ Ishtar::ThreadGroup çš„ä½¿ç”¨
 
     Ishtar::ThreadGroup tg;
     ThreadGroup::ExecuteFunction ef = MyThreadGroupFunction;
@@ -283,7 +290,7 @@ void testThreadGroup()
     tg.AddOnceThread("MyThread2", vef);
     tg.AddLoopThread("MyThread3", vef);
 
-    tg.Shutdown(5000); // µ¥«İ 5 ¬íÄÁ¡AÅı©Ò¦³°õ¦æºüµ²§ô // ¹w³] 10 ¬íÄÁ //
+    tg.Shutdown(5000); // ç­‰å¾… 5 ç§’é˜ï¼Œè®“æ‰€æœ‰åŸ·è¡Œç·’çµæŸ // é è¨­ 10 ç§’é˜ //
 
     //tg.AddThread("MyThread1", MyThreadGroupFunction);
     //tg.AddOnceThread("MyThread2", MyThreadGroupFunction);
@@ -296,11 +303,11 @@ void testThreadGroup()
 // Test ThreadPool
 void threadPoolWorkFunction(int num) 
 {
-    int counter = 0; // ¨C­Ó°õ¦æºüªº­p¼Æ¾¹
+    int counter = 0; // æ¯å€‹åŸ·è¡Œç·’çš„è¨ˆæ•¸å™¨
 
     for (int i = 0; i < num; ++i)
     {
-        ++counter;  // «D­ì¤l¾Ş§@¡A¥i¯à²£¥Í race condition
+        ++counter;  // éåŸå­æ“ä½œï¼Œå¯èƒ½ç”¢ç”Ÿ race condition
 
         cout << "work function now counter: " << counter << endl;
     }
@@ -308,13 +315,14 @@ void threadPoolWorkFunction(int num)
 class ThreadPoolWorkClass
 {
 public:
+
     void Execute(int num)
     {
-        int counter = 0; // ¨C­Ó°õ¦æºüªº­p¼Æ¾¹
+        int counter = 0; // æ¯å€‹åŸ·è¡Œç·’çš„è¨ˆæ•¸å™¨
 
         for (int i = 0; i < num; ++i)
         {
-            ++counter;  // «D­ì¤l¾Ş§@¡A¥i¯à²£¥Í race condition
+            ++counter;  // éåŸå­æ“ä½œï¼Œå¯èƒ½ç”¢ç”Ÿ race condition
 
             cout << "work class now counter: " << counter << endl;
         }
@@ -328,11 +336,11 @@ public:
 };
 void testThreadPool()
 {
-	Ishtar::ThreadPool::Startup(2); // ±Ò°Ê ThreadPool // «ü©w°õ¦æºüªº¼Æ¶q
+	Ishtar::ThreadPool::Startup(2); // å•Ÿå‹• ThreadPool // æŒ‡å®šåŸ·è¡Œç·’çš„æ•¸é‡
 
-	//Ishtar::ThreadPool::AddThread(2); // ThreadPool ¼W¥[ 2 ±ø°õ¦æºü 
+	//Ishtar::ThreadPool::AddThread(2); // ThreadPool å¢åŠ  2 æ¢åŸ·è¡Œç·’ 
 
-	//Ishtar::ThreadPool::Shutdown(); // Ãö³¬ ThreadPool // ³Ì¦hµ¥«İ 10 ¬í ²×¤î©Ò¦³¤u§@
+	//Ishtar::ThreadPool::Shutdown(); // é—œé–‰ ThreadPool // æœ€å¤šç­‰å¾… 10 ç§’ çµ‚æ­¢æ‰€æœ‰å·¥ä½œ
 }
 
 
@@ -350,15 +358,15 @@ void testThreadPoolWork()
     wPtr2 = ISHTAR_TP_SUBMIT_WORK(ThreadPoolWorkClass::Execute, (tpwc, 20), ());
 
     
-    cout << "wPtr1->IsInvoked: " << wPtr1->IsInvoked() << endl; // ÀË¬d¤u§@¬O§_ ¤w³Q°õ¦æ //
-    cout << "wPtr1->IsWorking: " << wPtr1->IsWorking() << endl; // ÀË¬d¤u§@¬O§_ ¥¿¦b°õ¦æ //
-    cout << "wPtr1->IsComplete: " << wPtr1->IsComplete() << endl; // ÀË¬d¤u§@¬O§_ °õ¦æ§¹¦¨ //
+    cout << "wPtr1->IsInvoked: " << wPtr1->IsInvoked() << endl; // æª¢æŸ¥å·¥ä½œæ˜¯å¦ å·²è¢«åŸ·è¡Œ //
+    cout << "wPtr1->IsWorking: " << wPtr1->IsWorking() << endl; // æª¢æŸ¥å·¥ä½œæ˜¯å¦ æ­£åœ¨åŸ·è¡Œ //
+    cout << "wPtr1->IsComplete: " << wPtr1->IsComplete() << endl; // æª¢æŸ¥å·¥ä½œæ˜¯å¦ åŸ·è¡Œå®Œæˆ //
 
-    // °õ¦æºü ID // ©|¥¼°õ¦æ©Î¤w³Q¨ú®ø¡A¦^¶Ç 0
+    // åŸ·è¡Œç·’ ID // å°šæœªåŸ·è¡Œæˆ–å·²è¢«å–æ¶ˆï¼Œå›å‚³ 0
     cout << "wPtr1->GetWorkingThreadId: " << wPtr1->GetWorkingThreadId() << endl;
 
-    wPtr1->Cancel(); // ¨ú®ø¤u§@
-    wPtr2->Cancel(); // ¨ú®ø¤u§@
+    wPtr1->Cancel(); // å–æ¶ˆå·¥ä½œ
+    wPtr2->Cancel(); // å–æ¶ˆå·¥ä½œ
 }
 
 
@@ -383,7 +391,7 @@ void testThreadPoolBarrierOrder()
     }
 
     while (!wPtr3->IsComplete()) { Sleep(1); }
-	//system("pause"); // ¼È°±µ{¦¡¡Aµ¥«İ¨Ï¥ÎªÌ¿é¤J
+	//system("pause"); // æš«åœç¨‹å¼ï¼Œç­‰å¾…ä½¿ç”¨è€…è¼¸å…¥
 }
 void testThreadPoolBarrierDelay() 
 {
@@ -402,8 +410,8 @@ void testThreadPoolBarrierDelay()
     }
 
     while (!wPtr4->IsComplete()) { Sleep(1); }
-    //system("pause"); // ¼È°±µ{¦¡¡Aµ¥«İ¨Ï¥ÎªÌ¿é¤J
-	//Sleep(5000); // µ¥«İ 5 ¬íÄÁ¡AÅı©Ò¦³¤u§@§¹¦¨
+    //system("pause"); // æš«åœç¨‹å¼ï¼Œç­‰å¾…ä½¿ç”¨è€…è¼¸å…¥
+	//Sleep(5000); // ç­‰å¾… 5 ç§’é˜ï¼Œè®“æ‰€æœ‰å·¥ä½œå®Œæˆ
 }
 void testThreadPoolBarrierDelayOrder()
 {
@@ -423,7 +431,7 @@ void testThreadPoolBarrierDelayOrder()
     }
 
     while (!wPtr5->IsComplete()) { Sleep(1); }
-    //system("pause"); // ¼È°±µ{¦¡¡Aµ¥«İ¨Ï¥ÎªÌ¿é¤J
+    //system("pause"); // æš«åœç¨‹å¼ï¼Œç­‰å¾…ä½¿ç”¨è€…è¼¸å…¥
 }
 
 
@@ -436,19 +444,19 @@ void testSimpleMutex()
 // Test Mutex
 void testMutex() 
 {
-    // ´ú¸Õ Ishtar::Mutex ªº¨Ï¥Î
+    // æ¸¬è©¦ Ishtar::Mutex çš„ä½¿ç”¨
     Ishtar::Mutex mutex;
 
     {
-        Ishtar::Mutex::UniqueLock lock(mutex); // Àò¨úÂê
+        Ishtar::Mutex::UniqueLock lock(mutex); // ç²å–é–
 
-        // ¦b³o¸Ì°õ¦æ»İ­n¤¬¥¸ªº¾Ş§@
+        // åœ¨é€™è£¡åŸ·è¡Œéœ€è¦äº’æ–¥çš„æ“ä½œ
 
-        cout << "Àò¨úÂê¡A°õ¦æ¤¬¥¸¾Ş§@" << endl;
+        cout << "ç²å–é–ï¼ŒåŸ·è¡Œäº’æ–¥æ“ä½œ" << endl;
     } 
-    // Âê·|¦b UniqueLock ªºªRºc¨ç¦¡¤¤¦Û°ÊÄÀ©ñ
+    // é–æœƒåœ¨ UniqueLock çš„ææ§‹å‡½å¼ä¸­è‡ªå‹•é‡‹æ”¾
 
-    cout << "Âê¤wÄÀ©ñ" << endl;
+    cout << "é–å·²é‡‹æ”¾" << endl;
 }
 
 // Test SharedMutex
@@ -472,7 +480,7 @@ public:
 
     Int Execute1() 
     {
-        // Âê©w
+        // é–å®š
         ISHTAR_GET_MUTEX_LOCK(dataLock, dataMutex);
 
         if (data < 20)
@@ -485,12 +493,12 @@ public:
             return Ishtar::EXECUTE_EXIT;
         }
 
-        // ¸ÑÂê
+        // è§£é–
         dataLock.Unlock();
     }
 private:
     int data = 0;
-    Ishtar::Mutex dataMutex; //«Ø¥ß¤@­Ó Mutex ÅÜ¼Æ
+    Ishtar::Mutex dataMutex; //å»ºç«‹ä¸€å€‹ Mutex è®Šæ•¸
 };
 void testMutexMarco()
 {
@@ -506,7 +514,7 @@ void testMutexMarco()
     t1.Join();
     t2.Join();
 
-	system("pause"); // ¼È°±µ{¦¡¡Aµ¥«İ¨Ï¥ÎªÌ¿é¤J
+	system("pause"); // æš«åœç¨‹å¼ï¼Œç­‰å¾…ä½¿ç”¨è€…è¼¸å…¥
 }
 
 //ISHTAR_LOCK_MUTEX();
@@ -522,7 +530,7 @@ public:
 
     void Insert(int num) 
     {
-        ISHTAR_LOCK_THIS();
+        ISHTAR_LOCK_THIS(); // ??????w??????]??w???ç¦¡?^
 
         cout << num << " ";
 
@@ -547,6 +555,7 @@ private:
 void PrintSet(MySet& mset) 
 {
     MySet::Iter it;
+    
     for (it = mset.GetBegin(); it != mset.GetEnd(); it++) 
     {
         cout << *it << " ";
@@ -570,16 +579,16 @@ void testLockable()
     cout << endl;
     PrintSet(mySet);
 
-    //// ´ú¸Õ Ishtar::Lockable ªº¨Ï¥Î
+    //// æ¸¬è©¦ Ishtar::Lockable çš„ä½¿ç”¨
     //class MyLockable : public Ishtar::Lockable<>
     //{
     //public:
     //    void DoSomething()
     //    {
-    //        ISHTAR_LOCK_THIS(); // Àò¨úÂê
+    //        ISHTAR_LOCK_THIS(); // ç²å–é–
     //        cout << "Doing something in MyLockable!" << endl;
-    //        // ¦b³o¸Ì°õ¦æ»İ­n¤¬¥¸ªº¾Ş§@
-    //        ISHTAR_UNLOCK_THIS(); // ÄÀ©ñÂê
+    //        // åœ¨é€™è£¡åŸ·è¡Œéœ€è¦äº’æ–¥çš„æ“ä½œ
+    //        ISHTAR_UNLOCK_THIS(); // é‡‹æ”¾é–
     //    }
     //};
     //MyLockable myLockable;
@@ -589,26 +598,26 @@ void testLockable()
 // Test Lockable Marco
 void testLockableMarco()
 {
-    // ¥~³¡Âê©w¤¬¥¸Âê¡]Âê©wª«¥ó©Ò¦bªº¨ç¦¡°Ï¶ô¡^
-    //ISHTAR_LOCK_OBJECT¡]obj¡^
-    //ISHTAR_GET_OBJECT_LOCK¡]lock¡Aobj¡^
+    // å¤–éƒ¨é–å®šäº’æ–¥é–ï¼ˆé–å®šç‰©ä»¶æ‰€åœ¨çš„å‡½å¼å€å¡Šï¼‰
+    //ISHTAR_LOCK_OBJECTï¼ˆobjï¼‰
+    //ISHTAR_GET_OBJECT_LOCKï¼ˆlockï¼Œobjï¼‰
     // 
-    // ¤º³¡Âê©w¤¬¥¸Âê¡]Âê©w¾ã­Ó¨ç¦¡¡^
-    //ISHTAR_LOCK_THIS¡]¡^
-    //ISHTAR_GET_THIS_LOCK¡]lock¡^
+    // å…§éƒ¨é–å®šäº’æ–¥é–ï¼ˆé–å®šæ•´å€‹å‡½å¼ï¼‰
+    //ISHTAR_LOCK_THISï¼ˆï¼‰
+    //ISHTAR_GET_THIS_LOCKï¼ˆlockï¼‰
 
 
 
-    //// ´ú¸Õ Ishtar::Lockable ªº§»¨Ï¥Î
+    //// æ¸¬è©¦ Ishtar::Lockable çš„å®ä½¿ç”¨
     //class MyLockableClass : public Ishtar::Lockable<>
     //{
     //public:
     //    void DoWork()
     //    {
-    //        ISHTAR_LOCK_THIS(); // Àò¨úÂê
+    //        ISHTAR_LOCK_THIS(); // ç²å–é–
     //        cout << "Doing work in MyLockableClass!" << endl;
-    //        // ¦b³o¸Ì°õ¦æ»İ­n¤¬¥¸ªº¾Ş§@
-    //        ISHTAR_UNLOCK_THIS(); // ÄÀ©ñÂê
+    //        // åœ¨é€™è£¡åŸ·è¡Œéœ€è¦äº’æ–¥çš„æ“ä½œ
+    //        ISHTAR_UNLOCK_THIS(); // é‡‹æ”¾é–
     //    }
     //};
     //MyLockableClass myLockableClass;
@@ -620,14 +629,14 @@ void testLockableMarco()
 void testConditionVariable() 
 {
 
-    // ´ú¸Õ Ishtar::ConditionVariable ªº¨Ï¥Î
+    // æ¸¬è©¦ Ishtar::ConditionVariable çš„ä½¿ç”¨
     Ishtar::ConditionVariable cv;
     Ishtar::Mutex mutex;
 
-    // ¦b³o¸Ì¥i¥H¹ê²{¤@­ÓÂ²³æªº±ø¥óÅÜ¼Æ´ú¸Õ
-    // ¨Ï¥Î Ishtar::Thread ¨Ó³Ğ«Ø¦h­Ó°õ¦æºü¡A¨Ã¨Ï¥Î±ø¥óÅÜ¼Æ¶i¦æ¦P¨B
-    // Æ[¹î¬O§_¯à¥¿½T¦a³qª¾©Mµ¥«İ¨Æ¥óµo¥Í
-	// ª`·N¡G³o¸Ì¶È´£¨Ñ¤@­ÓÂ²³æªº®Ø¬[¡A¨ãÅé¹ê²{???­n®Ú¾Ú»İ¨D¶i¦æ½Õ¾ã
+    // åœ¨é€™è£¡å¯ä»¥å¯¦ç¾ä¸€å€‹ç°¡å–®çš„æ¢ä»¶è®Šæ•¸æ¸¬è©¦
+    // ä½¿ç”¨ Ishtar::Thread ä¾†å‰µå»ºå¤šå€‹åŸ·è¡Œç·’ï¼Œä¸¦ä½¿ç”¨æ¢ä»¶è®Šæ•¸é€²è¡ŒåŒæ­¥
+    // è§€å¯Ÿæ˜¯å¦èƒ½æ­£ç¢ºåœ°é€šçŸ¥å’Œç­‰å¾…äº‹ä»¶ç™¼ç”Ÿ
+	// æ³¨æ„ï¼šé€™è£¡åƒ…æä¾›ä¸€å€‹ç°¡å–®çš„æ¡†æ¶ï¼Œå…·é«”å¯¦ç¾???è¦æ ¹æ“šéœ€æ±‚é€²è¡Œèª¿æ•´
 }
 
 
@@ -639,20 +648,20 @@ void incrementLambda()
 {
     for (int i = 0; i < 10000; ++i) 
     {
-        ++counter;  // «D­ì¤l¾Ş§@¡A¥i¯à²£¥Í race condition
+        ++counter;  // éåŸå­æ“ä½œï¼Œå¯èƒ½ç”¢ç”Ÿ race condition
 
         cout << "now counter: " << counter << endl;
     }
 }
 void testRaceConditionLambda()
 {
-    // ³o¸Ì¥i¥H¹ê²{¤@­ÓÂ²³æªºÄvª§±ø¥ó´ú¸Õ
-    // ¨Ï¥Î Ishtar::Thread ¨Ó³Ğ«Ø¦h­Ó°õ¦æºü¡A¨Ã¦@¨É¤@­ÓÅÜ¼Æ
-    // Æ[¹î¬O§_·|¥X²{Ävª§±ø¥ó°İÃD
+    // é€™è£¡å¯ä»¥å¯¦ç¾ä¸€å€‹ç°¡å–®çš„ç«¶çˆ­æ¢ä»¶æ¸¬è©¦
+    // ä½¿ç”¨ Ishtar::Thread ä¾†å‰µå»ºå¤šå€‹åŸ·è¡Œç·’ï¼Œä¸¦å…±äº«ä¸€å€‹è®Šæ•¸
+    // è§€å¯Ÿæ˜¯å¦æœƒå‡ºç¾ç«¶çˆ­æ¢ä»¶å•é¡Œ
 
-    counter = 0; // ­«³]­p¼Æ¾¹
+    counter = 0; // é‡è¨­è¨ˆæ•¸å™¨
 
-    // ¨Ï¥Î lambda ¨ç¦¡¥]¸Ë increment ¨ç¦¡
+    // ä½¿ç”¨ lambda å‡½å¼åŒ…è£ increment å‡½å¼
     Ishtar::Thread t1;
     Ishtar::Thread t2;
 
@@ -674,11 +683,15 @@ void testRaceConditionLambda()
 
 
 // Test Race Condition
+//mutex mutexLock;
+//mutexLock.lock(); // ?W??
+//mutexLock.unlock(); // ????
+
 int increment()
 {
     for (int i = 0; i < 100000; ++i)
     {
-        ++counter;  // «D­ì¤l¾Ş§@¡A¥i¯à²£¥Í race condition
+        ++counter;  // éåŸå­æ“ä½œï¼Œå¯èƒ½ç”¢ç”Ÿ race condition
 
         cout << "now counter: " << counter << endl;
     }
@@ -687,36 +700,159 @@ int increment()
 }
 void testRaceCondition() 
 {
-    // ¨Ï¥Î Ishtar::Thread ¨Ó³Ğ«Ø¦h­Ó°õ¦æºü¡A¨Ã¦@¨É¤@­ÓÅÜ¼Æ
-    // Æ[¹î¬O§_·|¥X²{Ävª§±ø¥ó°İÃD
+    // ä½¿ç”¨ Ishtar::Thread ä¾†å‰µå»ºå¤šå€‹åŸ·è¡Œç·’ï¼Œä¸¦å…±äº«ä¸€å€‹è®Šæ•¸
+    // è§€å¯Ÿæ˜¯å¦æœƒå‡ºç¾ç«¶çˆ­æ¢ä»¶å•é¡Œ
 
-    counter = 0; // ­«³]­p¼Æ¾¹
+    counter = 0; // é‡è¨­è¨ˆæ•¸å™¨
 
     Ishtar::Thread t1;
     Ishtar::Thread t2;
     Ishtar::Thread t3;
 
+    t1.StartOnce("IncrementThread1", increment);
+    t2.StartOnce("IncrementThread2", increment);
+    t3.StartOnce("IncrementThread3", increment);
+
+    t1.Join();
+    t2.Join();
+    t3.Join();
+
+    std::cout << "Final counter: " << counter << std::endl;
+
     //t1.Start("IncrementThread1", increment);
     //t2.Start("IncrementThread2", increment);
     //t3.Start("IncrementThread3", increment);
+ 
 
-
-    // ¤£ºŞ increment ¨ç¦¡¬O§_ªğ¦^ EXECUTE_CONTINUE(0) ÁÙ¬O EXECUTE_EXIT(1)¡A³o¸Ì³£·|Ä~Äò°õ¦æ
+    // ä¸ç®¡ increment å‡½å¼æ˜¯å¦è¿”å› EXECUTE_CONTINUE(0) é‚„æ˜¯ EXECUTE_EXIT(1)ï¼Œé€™è£¡éƒ½æœƒç¹¼çºŒåŸ·è¡Œ
     //t1.StartOnce("IncrementThread1", increment);
     //t2.StartOnce("IncrementThread2", increment);
     //t3.StartOnce("IncrementThread3", increment);
-	
+
     //t1.StartLoop("IncrementThread1", increment, 3);
     //t2.StartLoop("IncrementThread2", increment, 3);
     //t3.StartLoop("IncrementThread3", increment, 3);
 
     //t1.Abort();
     //t2.Abort();
-    //t3.Abort(); // ¤¤¤î t3 °õ¦æºü
+    //t3.Abort(); // ä¸­æ­¢ t3 åŸ·è¡Œç·’
+}
 
-    t1.Join();
-    t2.Join();
-    t3.Join();
+
+// Test Deadlock 
+// ????????
+class Car
+{
+public:
+
+    Car(const string& name, Mutex* selfMutex, Mutex* rightMutex)
+        : m_name(name), m_selfMutex(selfMutex), m_rightMutex(rightMutex) {}
+
+    int operator()() 
+    {
+        // ???????v?? mutex
+        ISHTAR_GET_MUTEX_LOCK(selfLock, *m_selfMutex);
+        cout << m_name << " ?w?????v?? mutex" << endl;
+
+        // ????????
+        Ishtar::Thread::Sleep(100);
+
+        // ?A??????k?? mutex?]?o??|?y???????^
+        ISHTAR_GET_MUTEX_LOCK(rightLock, *m_rightMutex);
+        cout << m_name << " ?w????k?? mutex" << endl;
+
+        // ?????q?L???f
+        cout << m_name << " ?q?L???f" << endl;
+
+		return EXECUTE_CONTINUE; // ??^ EXECUTE_CONTINUE ?H?~?????
+    }
+
+private:
+    string m_name;
+    Mutex* m_selfMutex;
+    Mutex* m_rightMutex;
+
+};
+void testDeadlock() 
+{
+    // ????????p
+    // ??{?@????æªº???????
+    // ??? Ishtar::Mutex ????h???????A??b???P?????????????????o????
+
+    // ???|?? mutex?A???O?N???|?x?????u?i?J?v?v
+    Ishtar::Mutex mutexA, mutexB, mutexC, mutexD;
+
+    // ???|?x???A??]?w?C?x?????u??v?v?P?u?k??v?? mutex
+    Car carA("CarA", &mutexA, &mutexB);
+    Car carB("CarB", &mutexB, &mutexC);
+    Car carC("CarC", &mutexC, &mutexD);
+    Car carD("CarD", &mutexD, &mutexA);
+
+
+    // ???|???????A?????|?x???P??i?J???f
+    Ishtar::Thread tA, tB, tC, tD;
+
+    tA.StartOnce("tCarA", boost::bind(&Car::operator(), &carA));
+    tB.StartOnce("tCarB", boost::bind(&Car::operator(), &carB));
+    tC.StartOnce("tCarC", boost::bind(&Car::operator(), &carC));
+    tD.StartOnce("tCarD", boost::bind(&Car::operator(), &carD));
+    
+    // ?D?{????????A??????????|???
+    tA.Join();
+    tB.Join();
+    tC.Join();
+    tD.Join();
+
+    cout << "?????????????????]?z??W?|?????d???^" << endl;
+}
+
+class CarTwo
+{
+public:
+
+    CarTwo(const string& name, vector<Mutex*>& allMutexes)
+        : m_name(name), m_allMutexes(allMutexes) {}
+
+    int operator()()
+    {
+        cout << "===========" << m_name << " ????????w??? Mutex..." << " ===========" << endl;
+
+        vector<Ishtar::Mutex::UniqueLock> locks;
+        for (auto mtx : m_allMutexes) 
+        {
+            locks.emplace_back(*mtx);
+            cout << m_name << " ?w??w mutex " << mtx << endl << endl;
+            //Ishtar::Thread::Sleep(50); // ?[???
+        }
+
+        cout << m_name << " ?q?L???f" << endl;
+        return EXECUTE_CONTINUE;
+    }
+private:
+    string m_name;
+    vector<Mutex*> m_allMutexes;
+};
+void testSolDeadlock()
+{
+    Ishtar::Mutex mutexA, mutexB, mutexC, mutexD;
+    vector<Mutex*> allMutexes = { &mutexA, &mutexB, &mutexC, &mutexD };
+
+    CarTwo carA("CarA", allMutexes);
+    CarTwo carB("CarB", allMutexes);
+    CarTwo carC("CarC", allMutexes);
+    CarTwo carD("CarD", allMutexes);
+
+    Ishtar::Thread tA, tB, tC, tD;
+
+    tA.StartOnce("tCarA", boost::bind(&CarTwo::operator(), &carA));
+    tB.StartOnce("tCarB", boost::bind(&CarTwo::operator(), &carB));
+    tC.StartOnce("tCarC", boost::bind(&CarTwo::operator(), &carC));
+    tD.StartOnce("tCarD", boost::bind(&CarTwo::operator(), &carD));
+
+    tA.Join();
+    tB.Join();
+    tC.Join();
+    tD.Join();
 
     std::cout << "Final counter: " << counter << std::endl;
 }
@@ -724,35 +860,55 @@ void testRaceCondition()
 
 // ===================================================== //
 
+
+
+
+// ===================================================== //
+
 int main() 
 {
-    cout << "¥Dµ{¦¡¶}©l¡I" << endl;
+    cout << "ä¸»ç¨‹å¼é–‹å§‹ï¼" << endl;
     
-	// testVector(); // ´ú¸Õ vector ªº®e¶q©M¤j¤p
 
 
-    //testRaceConditionLambda(); // ´ú¸ÕÄvª§±ø¥ó
-	//testRaceCondition(); // ´ú¸ÕÄvª§±ø¥ó
+    // ===================================================== //
 
-    //testThread(); // ´ú¸Õ½uµ{
-    //testExecutable(); // ´ú¸Õ¥i°õ¦æª«¥ó
-	//testThreadExecution(); // ´ú¸Õ ThreadExecution
-	//testThreadGroup(); // ´ú¸Õ ThreadGroup
+    // testVector(); // æ¸¬è©¦ vector çš„å®¹é‡å’Œå¤§å°
 
-	//testThreadPool(); // ´ú¸Õ ThreadPool ±Ò°Ê
-	//testThreadPoolWork(); // ´ú¸Õ ThreadPool ©M Work
-	//testThreadPoolBarrierOrder(); // ´ú¸Õ ThreadPool ©M Order Barrier
-    //testThreadPoolBarrierDelay(); // ´ú¸Õ ThreadPool ©M Delay Barrier
-	//testThreadPoolBarrierDelayOrder(); // ´ú¸Õ ThreadPool ©M Delayed Order Barrier
+    // ===================================================== //
 
-    //testSimpleMutex(); // ´ú¸Õ SimpleMutex
+
+    //testThread(); // æ¸¬è©¦ç·šç¨‹
+    //testExecutable(); // æ¸¬è©¦å¯åŸ·è¡Œç‰©ä»¶
+    //testThreadExecution(); // æ¸¬è©¦ ThreadExecution
+    //testThreadGroup(); // æ¸¬è©¦ ThreadGroup
+
+    //testThreadPool(); // æ¸¬è©¦ ThreadPool å•Ÿå‹•
+    //testThreadPoolWork(); // æ¸¬è©¦ ThreadPool å’Œ Work
+    //testThreadPoolBarrierOrder(); // æ¸¬è©¦ ThreadPool å’Œ Order Barrier
+    //testThreadPoolBarrierDelay(); // æ¸¬è©¦ ThreadPool å’Œ Delay Barrier
+    //testThreadPoolBarrierDelayOrder(); // æ¸¬è©¦ ThreadPool å’Œ Delayed Order Barrier
+
+    //testSimpleMutex(); // æ¸¬è©¦ SimpleMutex
     //testMutex();
     //testSharedMutex();
     //testSpinMutex();
     testMutexMarco();
-	//testLockable(); // ´ú¸Õ Lockable
+    //testLockable(); // æ¸¬è©¦ Lockable
 
 
-    cout << "¥Dµ{¦¡µ²§ô¡I" << endl;
+    //testRaceConditionLambda(); // æ¸¬è©¦ç«¶çˆ­æ¢ä»¶
+    //testRaceCondition(); // æ¸¬è©¦ç«¶çˆ­æ¢ä»¶
+    testDeadlock(); // æ¸¬è©¦æ­»é–
+    testSolDeadlock(); // æ¸¬è©¦è§£æ±ºæ­»é–
+
+
+    // ===================================================== //
+
+
+
+
+
+    cout << "ä¸»ç¨‹å¼çµæŸï¼" << endl;
     return 0;
 }

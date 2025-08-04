@@ -22,6 +22,11 @@
 //#include "../../Ishtar/src/Ishtar/Thread/ThreadImpl.h"
 //#include <boost/thread.hpp>
 
+#include <Ishtar/Trace.h>
+
+// Assuming ThreadsStatus is a type alias for a container like std::vector
+//using ThreadsStatus = std::vector<ThreadStatus>; // Replace ThreadStatus with the actual type
+
 
 #include <Gt2/Database/DatabaseManager.h>
 
@@ -176,6 +181,31 @@ void testMultipleInheritanceSameFuncName()
 
 int counter = 0;  // 共享變數
 
+// Test ThreadsStatus
+void testThreadsStatus()
+{
+    // 獲取所有執行緒的狀態
+    Ishtar::ThreadsStatus threads = Ishtar::ThreadManaging::GetThreadsStatus();
+
+    std::cout << "==== 目前執行緒列表 ====" << std::endl;
+
+    // 遍歷所有執行緒的狀態
+    while (threads.MoveNext())
+    {
+        const Ishtar::ThreadStatus& status = threads.Current();
+
+        std::cout << "執行緒 ID: " << status.ThreadId() << std::endl;
+        std::cout << "執行緒名稱: " << status.Name() << std::endl;
+        std::cout << "目前狀態文字: " << status.Text() << std::endl;
+        std::cout << "是否忙碌: " << (status.IsBusy() ? "是" : "否") << std::endl;
+        std::cout << "忙碌計數: " << status.TotalBusyCount() << std::endl;
+        std::cout << "目前經過時間: " << status.CurrentBusyElapsed() << " ms" << std::endl;
+        std::cout << "最大忙碌持續時間: " << status.MaxBusyDuration() << " ms" << std::endl;
+        std::cout << "最大忙碌任務名稱: " << status.MaxBusyName() << std::endl;
+        std::cout << "------------------------" << std::endl;
+    }
+}
+
 // Test thread
 int myThreadFunction() 
 {
@@ -187,18 +217,26 @@ int myThreadFunction()
 
     cout << "執行緒結束！" << endl;
 
-    return 0;
+    return EXECUTE_EXIT;
 
 }
 void testThread() 
 {
     Thread thread1;
+    Thread thread2;
+    Thread thread3;
     
     // 使用 Start 啟動執行緒
-    thread1.Start("MyThread", myThreadFunction);
+    thread1.Start("MyThread1", myThreadFunction);
+    thread2.Start("MyThread2", myThreadFunction);
+    thread3.Start("MyThread3", myThreadFunction);
+
+    testThreadsStatus();
 
     // 等待執行緒結束
     thread1.Join();
+    thread2.Join();
+    thread3.Join();
 }
 
 
@@ -351,6 +389,8 @@ class ThreadPoolWorkClass
 {
 public:
 
+	int counter = 0; // 每個執行緒的計數器
+
     void Execute(int num)
     {
         int counter = 0; // 每個執行緒的計數器
@@ -366,6 +406,31 @@ public:
     void Execute2(int num) 
     {
         cout << "Execute2 num: " << num << endl;
+    }
+
+    void Execute3(int& num)
+    {
+        // 
+        for (int i = 0; i < 20; ++i)
+        {
+            cout << "Execute3 num: " << num << endl;
+        }
+	}
+
+    void Execute4(int* num)
+    {
+        for (int i = 0; true; ++i)
+        {
+            cout << "Execute4 num: " << *num << endl;
+        }
+    }
+
+    void Execute5(ThreadPoolWorkClass& obj)
+    {
+        for (int i = 0; true; ++i)
+        {
+            cout << "Execute5 obj.counter: " << obj.counter << endl;
+        }
     }
 
 };
@@ -426,6 +491,7 @@ void testThreadPoolBarrierOrder()
     }
 
     while (!wPtr3->IsComplete()) { Sleep(1); }
+
 	//system("pause"); // 暫停程式，等待使用者輸入
 }
 void testThreadPoolBarrierDelay() 
@@ -467,6 +533,24 @@ void testThreadPoolBarrierDelayOrder()
 
     while (!wPtr5->IsComplete()) { Sleep(1); }
     //system("pause"); // 暫停程式，等待使用者輸入
+}
+void testThreadPoolBarrierHighOrder() 
+{
+    ThreadPoolWorkClass tpwc;
+    BarrierOrderWorkClass bowc;
+    Ishtar::ThreadPool::WorkPtr wPtr6;
+
+    for (int i = 0; i < 20; i++)
+    {
+        wPtr6 = ISHTAR_TP_SUBMIT_WORK
+        (
+            ThreadPoolWorkClass::Execute2,
+            (tpwc, i),
+            (Ishtar::ThreadPool::HighOrder(bowc))
+        );
+    }
+    
+    while (!wPtr6->IsComplete()) { Sleep(1); }
 }
 
 
@@ -565,7 +649,7 @@ public:
 
     void Insert(int num) 
     {
-        ISHTAR_LOCK_THIS(); // ??????w??????]??w???禡?^
+        ISHTAR_LOCK_THIS(); // 內部鎖定互斥鎖 (鎖定整個函式)
 
         cout << num << " ";
 
@@ -630,6 +714,47 @@ void testLockable()
     //myLockable.DoSomething();
 }
 
+class MySet2: public Ishtar::Lockable<>
+{
+public:
+
+    void InsertUnsafe(int num)
+    {
+        cout << num << " ";
+
+        m_set.insert(num);
+    }
+
+    typedef set<int> ::iterator Iter;
+
+    Iter GetBegin()
+    {
+        return m_set.begin();
+    }
+
+    Iter GetEnd()
+    {
+        return m_set.end();
+    }
+
+private:
+    set<int> m_set;
+};
+
+void testLockable2() 
+{
+    MySet2 mySet2;
+
+    // 方式: 使用ISHTAR_LOCK_OBJECT宏 - 鎖定整個區塊
+    {
+        ISHTAR_LOCK_OBJECT(mySet2); // 外部鎖定互斥鎖（鎖定物件所在的函式區塊）
+        mySet2.InsertUnsafe(42);
+        mySet2.InsertUnsafe(43);
+    } 
+    // 自動解鎖
+}
+
+
 // Test Lockable Marco
 void testLockableMarco()
 {
@@ -672,6 +797,22 @@ void testConditionVariable()
     // 使用 Ishtar::Thread 來創建多個執行緒，並使用條件變數進行同步
     // 觀察是否能正確地通知和等待事件發生
 	// 注意：這裡僅提供一個簡單的框架，具體實現???要根據需求進行調整
+}
+
+
+// Test ISHTAR_TRACE 
+void testIshtarTrace()
+{
+//#define ISHTAR_TRACE_ERROR   Ishtar::Trace::WriteError
+//#define ISHTAR_TRACE_WARNING Ishtar::Trace::WriteWarning
+//#define ISHTAR_TRACE_INFO    Ishtar::Trace::WriteInfo
+//#define ISHTAR_TRACE_VERBOSE Ishtar::Trace::WriteVerbose
+
+    ISHTAR_TRACE_VERBOSE("This is a verbose message");
+    ISHTAR_TRACE_INFO("This is an info message");
+    ISHTAR_TRACE_WARNING("This is a warning message");
+    ISHTAR_TRACE_ERROR("This is an error message");
+
 }
 
 
@@ -719,12 +860,23 @@ void testRaceConditionLambda()
 
 // Test Race Condition
 //mutex mutexLock;
-//mutexLock.lock(); // ?W??
-//mutexLock.unlock(); // ????
+//mutexLock.lock();
+//mutexLock.unlock();
 
+void voidIncrement() 
+{
+    Ishtar::Mutex mutexLock; // 建立一個 Mutex 變數
+
+    for (int i = 0; i < 100000; ++i)
+    {
+        ++counter;  // 非原子操作，可能產生 race condition
+
+        cout << "now counter: " << counter << endl;
+    }
+}
 int increment()
 {
-    for (int i = 0; i < 100000; ++i)
+    for (int i = 0; i < 10; ++i)
     {
         ++counter;  // 非原子操作，可能產生 race condition
 
@@ -739,26 +891,43 @@ void testRaceCondition()
     // 觀察是否會出現競爭條件問題
 
     counter = 0; // 重設計數器
+    const int numThread = 1000;
+    Ishtar::Thread threads[numThread];
 
-    Ishtar::Thread t1;
-    Ishtar::Thread t2;
-    Ishtar::Thread t3;
+    for (int i = 0; i < numThread; i++)
+    {
+        threads[i].Start("IncrementThread", increment);
+    }
 
-    t1.StartOnce("IncrementThread1", increment);
-    t2.StartOnce("IncrementThread2", increment);
-    t3.StartOnce("IncrementThread3", increment);
-
-    t1.Join();
-    t2.Join();
-    t3.Join();
+    // 然後等待所有執行緒完成
+    for (int i = 0; i < numThread; i++)
+    {
+        threads[i].Join();
+    }
 
     std::cout << "Final counter: " << counter << std::endl;
+
+
+    //Ishtar::Thread t1;
+    //Ishtar::Thread t2;
+    //Ishtar::Thread t3;
+
+    //t1.Start("IncrementThread1", increment);
+    //t2.Start("IncrementThread2", increment);
+    //t3.Start("IncrementThread3", increment);
+
+    //t1.StartOnce("IncrementThread1", voidIncrement);
+    //t2.StartOnce("IncrementThread2", voidIncrement);
+    //t3.StartOnce("IncrementThread3", voidIncrement);
+
+    //t1.Join();
+    //t2.Join();
+    //t3.Join();
 
     //t1.Start("IncrementThread1", increment);
     //t2.Start("IncrementThread2", increment);
     //t3.Start("IncrementThread3", increment);
  
-
     // 不管 increment 函式是否返回 EXECUTE_CONTINUE(0) 還是 EXECUTE_EXIT(1)，這裡都會繼續執行
     //t1.StartOnce("IncrementThread1", increment);
     //t2.StartOnce("IncrementThread2", increment);
@@ -775,7 +944,6 @@ void testRaceCondition()
 
 
 // Test Deadlock 
-// ????????
 class Car
 {
 public:
@@ -785,21 +953,20 @@ public:
 
     int operator()() 
     {
-        // ???????v?? mutex
         ISHTAR_GET_MUTEX_LOCK(selfLock, *m_selfMutex);
-        cout << m_name << " ?w?????v?? mutex" << endl;
+        cout << m_name << " 已鎖住自己的 mutex" << endl;
 
-        // ????????
-        Ishtar::Thread::Sleep(100);
+        // 模擬等待
+        //Ishtar::Thread::Sleep(100);
 
-        // ?A??????k?? mutex?]?o??|?y???????^
+        // 再嘗試鎖右邊的 mutex（這裡會造成死結）
         ISHTAR_GET_MUTEX_LOCK(rightLock, *m_rightMutex);
-        cout << m_name << " ?w????k?? mutex" << endl;
+        cout << m_name << " 已鎖住右邊的 mutex" << endl;
 
-        // ?????q?L???f
-        cout << m_name << " ?q?L???f" << endl;
+        // 模擬通過路口
+        cout << m_name << " 通過路口" << endl;
 
-		return EXECUTE_CONTINUE; // ??^ EXECUTE_CONTINUE ?H?~?????
+		return EXECUTE_CONTINUE;
     }
 
 private:
@@ -810,35 +977,36 @@ private:
 };
 void testDeadlock() 
 {
-    // ????????p
-    // ??{?@????檺???????
-    // ??? Ishtar::Mutex ????h???????A??b???P?????????????????o????
-
-    // ???|?? mutex?A???O?N???|?x?????u?i?J?v?v
+    // 建立四個 mutex
     Ishtar::Mutex mutexA, mutexB, mutexC, mutexD;
 
-    // ???|?x???A??]?w?C?x?????u??v?v?P?u?k??v?? mutex
+    // 建立四台車，並設定每台車的「自己」與「右邊」的 mutex
     Car carA("CarA", &mutexA, &mutexB);
     Car carB("CarB", &mutexB, &mutexC);
     Car carC("CarC", &mutexC, &mutexD);
     Car carD("CarD", &mutexD, &mutexA);
 
+    // 解鎖
+    //Car carA("CarA", &mutexA, &mutexB);
+    //Car carB("CarB", &mutexB, &mutexC);
+    //Car carC("CarC", &mutexC, &mutexD);
+    //Car carD("CarD", &mutexA, &mutexD);
 
-    // ???|???????A?????|?x???P??i?J???f
+
+    // 啟動四個執行緒，模擬四台車同時進入路口
     Ishtar::Thread tA, tB, tC, tD;
 
-    tA.StartOnce("tCarA", boost::bind(&Car::operator(), &carA));
-    tB.StartOnce("tCarB", boost::bind(&Car::operator(), &carB));
-    tC.StartOnce("tCarC", boost::bind(&Car::operator(), &carC));
-    tD.StartOnce("tCarD", boost::bind(&Car::operator(), &carD));
+    tA.StartLoop("tCarA", boost::bind(&Car::operator(), &carA));
+    tB.StartLoop("tCarB", boost::bind(&Car::operator(), &carB));
+    tC.StartLoop("tCarC", boost::bind(&Car::operator(), &carC));
+    tD.StartLoop("tCarD", boost::bind(&Car::operator(), &carD));
     
-    // ?D?{????????A??????????|???
     tA.Join();
     tB.Join();
     tC.Join();
     tD.Join();
 
-    cout << "?????????????????]?z??W?|?????d???^" << endl;
+    cout << "所有車輛執行緒結束（理論上會死結卡住）" << endl;
 }
 
 class CarTwo
@@ -850,17 +1018,19 @@ public:
 
     int operator()()
     {
-        cout << "===========" << m_name << " ????????w??? Mutex..." << " ===========" << endl;
+        cout << "===========" << m_name << " 嘗試依序鎖定所有 Mutex..." << " ===========" << endl;
 
         vector<Ishtar::Mutex::UniqueLock> locks;
+
         for (auto mtx : m_allMutexes) 
         {
             locks.emplace_back(*mtx);
-            cout << m_name << " ?w??w mutex " << mtx << endl << endl;
-            //Ishtar::Thread::Sleep(50); // ?[???
+            cout << m_name << " 已鎖定 mutex " << mtx << endl << endl;
+            //Ishtar::Thread::Sleep(50); // 觀察用
         }
 
-        cout << m_name << " ?q?L???f" << endl;
+        cout << m_name << " 通過路口" << endl;
+
         return EXECUTE_CONTINUE;
     }
 private:
@@ -870,6 +1040,7 @@ private:
 void testSolDeadlock()
 {
     Ishtar::Mutex mutexA, mutexB, mutexC, mutexD;
+
     vector<Mutex*> allMutexes = { &mutexA, &mutexB, &mutexC, &mutexD };
 
     CarTwo carA("CarA", allMutexes);
@@ -879,10 +1050,10 @@ void testSolDeadlock()
 
     Ishtar::Thread tA, tB, tC, tD;
 
-    tA.StartOnce("tCarA", boost::bind(&CarTwo::operator(), &carA));
-    tB.StartOnce("tCarB", boost::bind(&CarTwo::operator(), &carB));
-    tC.StartOnce("tCarC", boost::bind(&CarTwo::operator(), &carC));
-    tD.StartOnce("tCarD", boost::bind(&CarTwo::operator(), &carD));
+    tA.StartLoop("tCarA", boost::bind(&CarTwo::operator(), &carA));
+    tB.StartLoop("tCarB", boost::bind(&CarTwo::operator(), &carB));
+    tC.StartLoop("tCarC", boost::bind(&CarTwo::operator(), &carC));
+    tD.StartLoop("tCarD", boost::bind(&CarTwo::operator(), &carD));
 
     tA.Join();
     tB.Join();
@@ -890,6 +1061,33 @@ void testSolDeadlock()
     tD.Join();
 
     std::cout << "Final counter: " << counter << std::endl;
+}
+
+
+
+void testPointerReferenceBind()
+{
+    Ishtar::ThreadPool::Startup(2);
+
+    Ishtar::ThreadPool::WorkPtr wPtr1;
+    Ishtar::ThreadPool::WorkPtr wPtr2;
+    Ishtar::ThreadPool::WorkPtr wPtr3;
+
+    ThreadPoolWorkClass tpwc;
+	int num = 0;
+	int* numPtr = &num;
+    
+    tpwc.counter = 0;
+
+    //wPtr1 = ISHTAR_TP_SUBMIT_WORK(ThreadPoolWorkClass::Execute3, (tpwc, num), ());
+    //wPtr2 = ISHTAR_TP_SUBMIT_WORK(ThreadPoolWorkClass::Execute4, (tpwc, numPtr), ());
+    wPtr3 = ISHTAR_TP_SUBMIT_WORK(ThreadPoolWorkClass::Execute5, (tpwc, tpwc), ());
+
+	Sleep(1000); // 等待 1 秒鐘，讓工作完成
+
+    tpwc.counter = 20;
+    
+	//num = 20; // 修改 num 的值
 }
 
 
@@ -918,9 +1116,12 @@ int main()
     //testAddTemplate(); // 
 
     // ===================================================== //
-
+    // ================ ISHTAR Multi Thread ================ //
+    // ===================================================== //
 
     //testThread(); // 測試線程
+    //testThreadsStatus(); // 
+
     //testExecutable(); // 測試可執行物件
     //testThreadExecution(); // 測試 ThreadExecution
     //testThreadGroup(); // 測試 ThreadGroup
@@ -935,22 +1136,23 @@ int main()
     //testMutex();
     //testSharedMutex();
     //testSpinMutex();
-    testMutexMarco();
+    //testMutexMarco();
     //testLockable(); // 測試 Lockable
-
+	//testLockable2(); // 測試 Lockable2
+	//testIshtarTrace(); // 測試 Ishtar Trace
 
     //testRaceConditionLambda(); // 測試競爭條件
     //testRaceCondition(); // 測試競爭條件
-    testDeadlock(); // 測試死鎖
-    testSolDeadlock(); // 測試解決死鎖
+    //testDeadlock(); // 測試死鎖
+    //testSolDeadlock(); // 測試解決死鎖
 
+    //testPointerReferenceBind();
 
     // ===================================================== //
 
 
 
-
-
+    //system("pause");
     cout << "主程式結束！" << endl;
     return 0;
 }

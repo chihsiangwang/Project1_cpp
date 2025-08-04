@@ -25,6 +25,7 @@
 
 #include <Gt2/Database/DatabaseManager.h>
 
+
 using namespace std;
 using namespace Ishtar;
 
@@ -32,18 +33,52 @@ using namespace Ishtar;
 // ===================================================== //
 
 // hello 函式
-/*void hello()
+void testHello()
 {
     cout << "Hello, World!! 123" << endl;
     cout << "Hello from the hello function!" << endl;
 }
 
-
 // 新增一個 inline 函式
-inline void printSeparator() {
+inline void testPrintSeparator() 
+{
     cout << "====================" << endl << endl;
 }
 
+// 測試指標和引用
+void testPointer() 
+{
+    int a = 10;
+    int* p = &a; // 指標 p 指向變數 a 的地址
+
+    cout << "Value of a: " << a << endl;
+    cout << "Address of a: " << &a << endl;
+
+    cout << "Value pointed by p: " << *p << endl;
+    cout << "Address stored in p: " << p << endl;
+
+    cout << "Size of pointer p: " << sizeof(p) << " bytes" << endl;
+
+}
+
+// 測試引用
+void testAddress()
+{
+    int b = 5;
+    int& a = b; // 讓 a 是 b 的別名(alias)
+
+    a = 6;
+    cout << "Value of b: " << b << endl; // 6
+    cout << "Value of a: " << a << endl; // 6
+
+    cout << "Address of b: " << &b << endl;
+    cout << "Address of a: " << &a << endl; // 兩者地址相同
+    cout << "Size of reference a: " << sizeof(a) << " bytes" << endl; // 引用大小與原變數相同
+}
+
+
+
+/*
 
 // marco定義
 #define PI 3.14159
@@ -75,51 +110,23 @@ void printDebugMode() {
 }
 #endif
 
-// 測試指標和引用
-void testPointer() {
-    int a = 10;
-    int* p = &a; // 指標 p 指向變數 a 的地址
 
-    cout << "Value of a: " << a << endl;
-    cout << "Address of a: " << &a << endl; 
+*/
 
-    cout << "Value pointed by p: " << *p << endl;
-    cout << "Address stored in p: " << p << endl;
-
-	cout << "Size of pointer p: " << sizeof(p) << " bytes" << endl;
-}
-
-// 測試引用
-void testAddress() 
-{
-
-    int b = 5;
-    int& a = b; // 讓 a 是 b 的別名(alias)
-
-    a = 6;
-	cout << "Value of b: " << b << endl; // 6
-    cout << "Value of a: " << a << endl; // 6
-
-    cout << "Address of b: " << &b << endl;
-    cout << "Address of a: " << &a << endl; // 兩者地址相同
-	cout << "Size of reference a: " << sizeof(a) << " bytes" << endl; // 引用大小與原變數相同
-}
-
-
+// 測試模板函式
 template <typename T>
-auto add(T a, T b) -> decltype(a + b) 
+auto add(T a, T b) -> decltype(a + b)
 {
     return a + b;
 }
-
-// 測試模板函式
-void testAddTemplate() 
+void testAddTemplate()
 {
-	cout << "Testing add template function:" << endl;
+    cout << "Testing add template function:" << endl;
 
     std::cout << add(3, 4) << std::endl;      // 7
     std::cout << add(2.5, 3.5) << std::endl;  // 6.0
 }
+
 
 
 // Vector
@@ -128,14 +135,42 @@ void testVector()
     std::vector<int> v;
     std::cout << "Capacity: " << v.capacity() << std::endl;
 
-    for (int i = 0; i < 20; ++i) 
+    for (int i = 0; i < 20; ++i)
     {
         v.push_back(i);
         std::cout << "Size: " << v.size() << ", Capacity: " << v.capacity() << std::endl;
     }
 }
 
-*/
+
+class A
+{
+public:
+    void print() { std::cout << "A::print()\n"; }
+};
+class B
+{
+public:
+    void print() { std::cout << "B::print()\n"; }
+};
+class C : public A, public B
+{
+    // 沒有自己定義 print()
+};
+void testMultipleInheritanceSameFuncName()
+{
+    C c;
+
+    // 使用 A 的 print()
+    c.A::print(); // 輸出: A::print()
+
+    // 使用 B 的 print()
+    c.B::print(); // 輸出: B::print()
+
+	//c.print(); // 這會導致編譯錯誤，因為 C 沒有自己的 print() 函式
+
+}
+
 
 // ===================================================== //
 
@@ -870,10 +905,17 @@ int main()
     cout << "主程式開始！" << endl;
     
 
-
+    // ===================================================== //
+    // ====================== C++ ========================== //
     // ===================================================== //
 
-    // testVector(); // 測試 vector 的容量和大小
+	//testHello(); // 測試 hello 函式
+	//testPrintSeparator(); // 測試分隔線函式
+	//testPointer(); // 測試指標和引用
+	//testAddress(); // 測試引用
+    //testVector(); // 測試 vector 的容量和大小
+    //testMultipleInheritanceSameFuncName();
+    //testAddTemplate(); // 
 
     // ===================================================== //
 

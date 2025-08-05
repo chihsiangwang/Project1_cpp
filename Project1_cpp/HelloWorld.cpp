@@ -28,7 +28,7 @@
 //using ThreadsStatus = std::vector<ThreadStatus>; // Replace ThreadStatus with the actual type
 
 
-#include <Gt2/Database/DatabaseManager.h>
+#include <Gt2/Database/DatabaseManager.h> // Include the DatabaseManager header
 
 
 using namespace std;

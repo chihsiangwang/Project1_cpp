@@ -29,6 +29,7 @@
 
 
 #include <Gt2/Database/DatabaseManager.h> // Include the DatabaseManager header
+#include <Gt2/Database/DataSource.h> // DataReader
 
 
 using namespace std;
@@ -1093,7 +1094,263 @@ void testPointerReferenceBind()
 
 // ===================================================== //
 
+void testDatabaseManager()
+{
 
+    //Gt2::DataReader dr = ds->ExecuteReader(commandText);
+
+    //int column1;
+    //dr.BindColumn<Gt2::SqlInt>(1, column1);
+
+    //std::cout << "DataReader : " << std::endl;
+    //while (dr.FetchNext())
+    //{
+    //    std::cout << "Employee ID: " << column1 << std::endl;
+    //}
+
+
+
+
+
+    //dr.BindColumns(
+    //    Gt2::DataColumn<Gt2::SqlNvarchar<20>>(name)
+    //);
+
+
+
+    //const std::wstring commandText = Ishtar::Swprintf(L"CREATE TABLE IF NOT EXISTS TableTest1 (EmployeeID INT PRIMARY KEY, EmployeeName NVARCHAR(50))");
+    //const wstring commandText = Ishtar::Swprintf(L"{?=CALL TableTest1_GetAllEmployeeID};");
+    //Gt2::DataReader reader = dataManagerControl->GetDataSource()->ExecuteReader(L"{ ?= CALL JawenTest_TryLogin(?, ?)};", params);
+
+}
+void testExecuteNonQuery(Gt2::DataSource* ds)
+{
+    // 使用 ExecuteNonQuery 時，需要預先設定Ishtar::ThreadPool::Startup();
+    // 因為 OdbcDataSource::DemandExecution 會去呼叫，ISHTAR_TP_SUBMIT_WORK
+
+    // 要注意帶入的參數，如果是指標需要確保 不會事先釋放，或是確保 該指標能夠自動釋放
+    // 否則有可能發生存取不該存取的記憶體，或是該指標不知道什麼時候釋放
+
+	cout << "do testExecuteNonQuery..." << endl;
+
+    Gt2::DataParameters params;
+    
+    params.AddInputParameter<Gt2::SqlInt>(4);
+    const std::wstring paramsName = Ishtar::Swprintf(L"Cindy");
+    params.AddInputParameter<Gt2::SqlNvarchar<10>>(paramsName);
+    params.AddInputParameter<Gt2::SqlInt>(20000);
+
+    const std::wstring commandText = Ishtar::Swprintf(L"{CALL TableTest1_InsertOneData(?, ?, ?)};");
+    ds->ExecuteNonQuery(commandText, params);
+
+    cout << endl << "done testExecuteNonQuery..." << endl;
+}
+
+void testExecuteNonQuery2(Gt2::DataSource* ds)
+{
+    // 建立第一個 SQL 指令的參數
+    Gt2::DataParameters params1;
+    params1.AddInputParameter<SqlInt>(4); // 輸入參數：員工ID
+    params1.AddInputParameter<SqlNvarchar<20>>(L"Cindy"); // 輸入參數：員工姓名
+    params1.AddInputParameter<SqlInt>(20000); // 輸入參數：薪資
+
+    // 執行第一個指令（新增員工資料）
+    Gt2::DataSource::ExecuteStub stub1 = ds->ExecuteNonQuery
+    (
+        L"{CALL TableTest1_InsertOneData(?, ?, ?)};",
+        params1,
+        Gt2::DataSource::ExecuteStub() // 無依賴
+    );
+
+
+    // 建立第二個 SQL 指令的參數（含輸出參數）
+    Gt2::DataParameters params2;
+    params2.AddInputParameter<SqlInt>(123); // 輸入參數：員工ID
+    int affectedRows = 0;
+    params2.AddOutputParameter<SqlInt>(affectedRows); // 輸出參數：受影響筆數
+
+    // 執行第二個非查詢指令（刪除員工，依賴前一個完成）
+    Gt2::DataSource::ExecuteStub stub2 = ds->ExecuteNonQuery
+    (
+        L"{CALL TableTest1_DeleteByEmployeeID(?)};",
+        params2,
+        stub1 // 依賴 stub1 完成後才執行
+    );
+
+
+    // 等待第二個指令完成
+    while (!stub2.IsComplete()) 
+    {
+        Ishtar::Thread::Sleep(100);
+    }
+
+    // 輸出受影響筆數
+    std::cout << "Delete affected rows: " << affectedRows << std::endl;
+}
+
+
+
+void testExecuteReader(Gt2::DataSource* ds)
+{
+    cout << "do testExecuteReader..." << endl;
+
+    const wstring commandText = Ishtar::Swprintf(L"{?=CALL TableTest1_GetAllEmployeeID};");
+    Gt2::DataReader dr = ds->ExecuteReader(commandText);
+
+    int column1;
+    dr.BindColumn<Gt2::SqlInt>(1, column1);
+
+    std::cout << "DataReader : " << std::endl;
+    while (dr.FetchNext())
+    {
+        // 逐筆讀取資料
+        std::cout << "Employee ID: " << column1 << std::endl;
+    }
+
+    cout << endl << "done testExecuteReader..." << endl;
+}
+
+
+
+// 定義一個資料結構，用於 BindFurtherRecord
+struct PlayerInfo {
+    int id;
+    std::wstring name;
+    int level;
+    int experience;
+
+    // 定義綁定關係
+    ISHTAR_ODBC_RECORD_DEFINE_4(
+        (Gt2::SqlInt, id),
+        (Gt2::SqlNvarchar<50>, name),
+        (Gt2::SqlInt, level),
+        (Gt2::SqlInt, experience)
+    )
+};
+void testExecuteReader2(Gt2::DataSource* ds) 
+{
+    try 
+    {
+        // 1. 基本的 ExecuteReader 和 BindColumn
+        {
+            const std::wstring query = L"SELECT PlayerId, PlayerName, Level FROM Players WHERE Level > 10";
+            Gt2::DataReader reader = ds->ExecuteReader(query);
+
+            int playerId;
+            std::wstring playerName;
+            int level;
+
+            // 單一欄位綁定方式
+            reader.BindColumn<Gt2::SqlInt>(1, playerId);
+            reader.BindColumn<Gt2::SqlNvarchar<50>>(2, playerName);
+            reader.BindColumn<Gt2::SqlInt>(3, level);
+
+            std::cout << "高等級玩家列表：" << std::endl;
+            while (reader.FetchNext()) {
+                std::wcout << L"ID: " << playerId << L", 名稱: " << playerName
+                    << L", 等級: " << level << std::endl;
+            }
+        }
+
+        // 2. 使用 BindColumns 和 DataColumn
+        {
+            const std::wstring query = L"SELECT PlayerId, PlayerName, Level, Experience, LastLogin FROM Players WHERE PlayerId = 123";
+            Gt2::DataReader reader = ds->ExecuteReader(query);
+
+            int playerId;
+            std::wstring playerName;
+            int level;
+            int exp;
+
+            // 多欄位同時綁定
+            reader.BindColumns(
+                Gt2::DataColumn<Gt2::SqlInt>(playerId),
+                Gt2::DataColumn<Gt2::SqlNvarchar<50>>(playerName),
+                Gt2::DataColumn<Gt2::SqlInt>(level),
+                Gt2::DataColumn<Gt2::SqlInt>(exp),
+                Gt2::DataColumn<Gt2::SqlDatetime>(Gt2::Ignored()) // 忽略第5個欄位
+            );
+
+            if (reader.FetchNext()) {
+                std::wcout << L"玩家資料：ID=" << playerId << L", 名稱=" << playerName
+                    << L", 等級=" << level << L", 經驗值=" << exp << std::endl;
+            }
+        }
+
+        // 3. 使用 BindColumnsAt 從特定位置開始綁定
+        {
+            const std::wstring query = L"SELECT * FROM Players WHERE PlayerId = 456"; // * 包含很多欄位
+            Gt2::DataReader reader = ds->ExecuteReader(query);
+
+            std::wstring playerName;
+            int level;
+
+            // 從第2欄開始綁定（跳過第1欄 PlayerId）
+            reader.BindColumnsAt(2,
+                Gt2::DataColumn<Gt2::SqlNvarchar<50>>(playerName),
+                Gt2::DataColumn<Gt2::SqlInt>(level)
+            );
+
+            if (reader.FetchNext()) {
+                std::wcout << L"選擇性資料：名稱=" << playerName << L", 等級=" << level << std::endl;
+            }
+        }
+
+        // 4. 使用 BindFurtherRecord 綁定整個結構
+        {
+            const std::wstring query = L"SELECT PlayerId, PlayerName, Level, Experience FROM Players WHERE PlayerId = 789";
+            Gt2::DataReader reader = ds->ExecuteReader(query);
+
+            PlayerInfo player;
+            reader.BindFurtherRecord(player);
+
+            if (reader.FetchNext()) {
+                std::wcout << L"玩家結構：ID=" << player.id << L", 名稱=" << player.name
+                    << L", 等級=" << player.level << L", 經驗值=" << player.experience << std::endl;
+            }
+        }
+
+        // 5. 從存儲過程取得回傳值 GetReturnValue
+        {
+            const std::wstring spCall = L"{?=CALL CalculatePlayerRank(789)}";
+            Gt2::DataReader reader = ds->ExecuteReader(spCall);
+
+            // 取得存儲過程的回傳值
+            int rank = reader.GetReturnValue();
+            std::cout << "玩家排名: " << rank << std::endl;
+        }
+    }
+    catch (const std::exception& e) 
+    {
+        std::cerr << "資料庫錯誤: " << e.what() << std::endl;
+    }
+
+    //範例特點說明：
+    //    1.	ExecuteReader：每個區塊都使用了 ds->ExecuteReader 執行 SQL 查詢。
+    //    2.	BindColumn：展示如何綁定單個欄位，指定欄位位置和資料型別。
+    //    3.	BindColumns + DataColumn：展示如何同時綁定多個欄位。
+    //    4.	Ignored：在第2個範例中示範如何使用 Gt2::Ignored() 跳過不需要的欄位。
+    //    5.	BindColumnsAt：展示如何從特定位置（非第1欄）開始綁定欄位。
+    //    6.	BindFurtherRecord：展示如何將整個結果集綁定到自定義結構，使用 ISHTAR_ODBC_RECORD_DEFINE_4 宏來定義綁定關係。
+    //    7.	GetReturnValue：在存儲過程呼叫後，使用 GetReturnValue() 獲取返回值。
+    //    這個範例涵蓋了所有需要的功能，展示了如何靈活使用 DataReader 來處理不同的查詢需求。
+
+
+}
+
+void testFunc() 
+{
+    Gt2::DataSource* ds;
+    const wstring commandText = Ishtar::Swprintf(L"{?=CALL TableTest1_GetAllEmployeeID};");
+    Gt2::DataReader dr = ds->ExecuteReader(commandText);
+
+    int column1;
+    while (dr.FetchNext())
+    {
+        // 逐筆讀取資料
+        std::cout << "Employee ID: " << column1 << std::endl;
+    }
+}
 
 
 // ===================================================== //
@@ -1152,11 +1409,29 @@ int main()
     // ==================== Database ======================= //
     // ===================================================== //
 
+    Gt2::DatabaseManager dbm; // 建立資料庫連線的元件
+    Ishtar::ThreadPool::Startup(10);
+
+    Gt2::DataSource* ds; // 建立資料連線來源
+    ds = dbm.OpenDataSource("DSN=sqlserver;UID=gameuser;PWD=esabd250406", 10);
+    //boost::shared_ptr<Gt2::DataSource> ds(dbm.OpenDataSource("DSN=sqlserver;UID=gameuser;PWD=esabd250406", 10));
+
+    //testExecuteNonQuery(ds);
+    //ISHTAR_TP_SUBMIT_WORK(testExecuteNonQuery, (ds), ());
+    ISHTAR_TP_SUBMIT_WORK(testExecuteNonQuery2, (ds), ());
+
+    //ISHTAR_TP_SUBMIT_WORK(testExecuteReader, (ds), ());
+        
 
 
+
+    // ===================================================== //
     // ===================================================== //
 
     //system("pause");
     cout << "主程式結束！" << endl;
     return 0;
+
+    // 查看目前使用的編譯器
+    // std::cout << "MSVC Version: " << _MSC_VER << std::endl;
 }

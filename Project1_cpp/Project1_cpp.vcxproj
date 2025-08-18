@@ -71,7 +71,11 @@
   </ImportGroup>
   <PropertyGroup Label="UserMacros" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
-    <IncludePath>..\..\Ishtar\include;..\..\Boost;..\..\Libraries\include;$(IncludePath)</IncludePath>
+    <IncludePath>..\..\Ishtar\include;..\..\Boost;..\..\Libraries\include;..\..\GameTower2\include;$(IncludePath)</IncludePath>
+    <LibraryPath>..\..\boost\stage\lib;..\..\Libraries\lib;$(LibraryPath)</LibraryPath>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
+    <IncludePath>..\..\Ishtar\include;..\..\Boost;..\..\Libraries\include;..\..\GameTower2\include;$(IncludePath)</IncludePath>
     <LibraryPath>..\..\boost\stage\lib;..\..\Libraries\lib;$(LibraryPath)</LibraryPath>
   </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
@@ -80,7 +84,7 @@
       <SDLCheck>true</SDLCheck>
       <PreprocessorDefinitions>WIN32;_DEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>false</ConformanceMode>
-      <AdditionalIncludeDirectories>..\..\Ishtar\include;..\..\Libraries\lib;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>..\..\Ishtar\include;..\..\Libraries\lib;..\..\GameTower2\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <RuntimeLibrary>MultiThreadedDebug</RuntimeLibrary>
     </ClCompile>
     <Link>
@@ -96,6 +100,7 @@
       <SDLCheck>true</SDLCheck>
       <PreprocessorDefinitions>WIN32;NDEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
+      <AdditionalIncludeDirectories>..\..\Ishtar\include;..\..\Libraries\lib;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
@@ -132,6 +137,12 @@
     <ClCompile Include="HelloWorld.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ProjectReference Include="..\..\GameTower2\Common\Gt2Common_2022.vcxproj">
+      <Project>{d9baf213-4efe-4807-be4e-7ccd009827b9}</Project>
+    </ProjectReference>
+    <ProjectReference Include="..\..\GameTower2\ServerCommon\Gt2ServerCommon_2022.vcxproj">
+      <Project>{74b66971-4f5e-48cd-b5aa-8430214c12ba}</Project>
+    </ProjectReference>
     <ProjectReference Include="..\..\Ishtar\src\Ishtar_2022.vcxproj">
       <Project>{2479dc85-4886-4bb9-a2c4-bba8358aadcd}</Project>
     </ProjectReference>

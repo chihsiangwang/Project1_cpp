@@ -4,8 +4,16 @@ Microsoft Visual Studio Solution File, Format Version 12.00
 VisualStudioVersion = 17.14.36121.58
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "Project1_cpp", "Project1_cpp\Project1_cpp.vcxproj", "{3EE94D63-B3B7-49A2-BC5B-FA8AFF73165C}"
+	ProjectSection(ProjectDependencies) = postProject
+		{74B66971-4F5E-48CD-B5AA-8430214C12BA} = {74B66971-4F5E-48CD-B5AA-8430214C12BA}
+		{D9BAF213-4EFE-4807-BE4E-7CCD009827B9} = {D9BAF213-4EFE-4807-BE4E-7CCD009827B9}
+	EndProjectSection
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "Ishtar", "..\Ishtar\src\Ishtar_2022.vcxproj", "{2479DC85-4886-4BB9-A2C4-BBA8358AADCD}"
+EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "Gt2ServerCommon", "..\GameTower2\ServerCommon\Gt2ServerCommon_2022.vcxproj", "{74B66971-4F5E-48CD-B5AA-8430214C12BA}"
+EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "Gt2Common", "..\GameTower2\Common\Gt2Common_2022.vcxproj", "{D9BAF213-4EFE-4807-BE4E-7CCD009827B9}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -31,6 +39,22 @@ Global
 		{2479DC85-4886-4BB9-A2C4-BBA8358AADCD}.Release|x64.Build.0 = Release|Win32
 		{2479DC85-4886-4BB9-A2C4-BBA8358AADCD}.Release|x86.ActiveCfg = Release|Win32
 		{2479DC85-4886-4BB9-A2C4-BBA8358AADCD}.Release|x86.Build.0 = Release|Win32
+		{74B66971-4F5E-48CD-B5AA-8430214C12BA}.Debug|x64.ActiveCfg = Debug|Win32
+		{74B66971-4F5E-48CD-B5AA-8430214C12BA}.Debug|x64.Build.0 = Debug|Win32
+		{74B66971-4F5E-48CD-B5AA-8430214C12BA}.Debug|x86.ActiveCfg = Debug|Win32
+		{74B66971-4F5E-48CD-B5AA-8430214C12BA}.Debug|x86.Build.0 = Debug|Win32
+		{74B66971-4F5E-48CD-B5AA-8430214C12BA}.Release|x64.ActiveCfg = Release|Win32
+		{74B66971-4F5E-48CD-B5AA-8430214C12BA}.Release|x64.Build.0 = Release|Win32
+		{74B66971-4F5E-48CD-B5AA-8430214C12BA}.Release|x86.ActiveCfg = Release|Win32
+		{74B66971-4F5E-48CD-B5AA-8430214C12BA}.Release|x86.Build.0 = Release|Win32
+		{D9BAF213-4EFE-4807-BE4E-7CCD009827B9}.Debug|x64.ActiveCfg = Debug|Win32
+		{D9BAF213-4EFE-4807-BE4E-7CCD009827B9}.Debug|x64.Build.0 = Debug|Win32
+		{D9BAF213-4EFE-4807-BE4E-7CCD009827B9}.Debug|x86.ActiveCfg = Debug|Win32
+		{D9BAF213-4EFE-4807-BE4E-7CCD009827B9}.Debug|x86.Build.0 = Debug|Win32
+		{D9BAF213-4EFE-4807-BE4E-7CCD009827B9}.Release|x64.ActiveCfg = Release|Win32
+		{D9BAF213-4EFE-4807-BE4E-7CCD009827B9}.Release|x64.Build.0 = Release|Win32
+		{D9BAF213-4EFE-4807-BE4E-7CCD009827B9}.Release|x86.ActiveCfg = Release|Win32
+		{D9BAF213-4EFE-4807-BE4E-7CCD009827B9}.Release|x86.Build.0 = Release|Win32
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

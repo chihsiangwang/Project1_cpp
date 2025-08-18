@@ -1123,6 +1123,7 @@ void testDatabaseManager()
     //Gt2::DataReader reader = dataManagerControl->GetDataSource()->ExecuteReader(L"{ ?= CALL JawenTest_TryLogin(?, ?)};", params);
 
 }
+
 void testExecuteNonQuery(Gt2::DataSource* ds)
 {
     // 使用 ExecuteNonQuery 時，需要預先設定Ishtar::ThreadPool::Startup();
@@ -1131,61 +1132,93 @@ void testExecuteNonQuery(Gt2::DataSource* ds)
     // 要注意帶入的參數，如果是指標需要確保 不會事先釋放，或是確保 該指標能夠自動釋放
     // 否則有可能發生存取不該存取的記憶體，或是該指標不知道什麼時候釋放
 
-	cout << "do testExecuteNonQuery..." << endl;
+    std::cout << "do testExecuteNonQuery..." << endl;
 
     Gt2::DataParameters params;
     
-    params.AddInputParameter<Gt2::SqlInt>(4);
-    const std::wstring paramsName = Ishtar::Swprintf(L"Cindy");
+    params.AddInputParameter<Gt2::SqlInt>(16);
+    const std::wstring paramsName = Ishtar::Swprintf(L"Sam");
     params.AddInputParameter<Gt2::SqlNvarchar<10>>(paramsName);
-    params.AddInputParameter<Gt2::SqlInt>(20000);
+    params.AddInputParameter<Gt2::SqlInt>(26000);
+    int outNum = 1;
+    params.AddOutputParameter<Gt2::SqlInt>(outNum);
 
-    const std::wstring commandText = Ishtar::Swprintf(L"{CALL TableTest1_InsertOneData(?, ?, ?)};");
+    const std::wstring commandText = Ishtar::Swprintf(L"{CALL TableTest1_InsertOneData(?, ?, ?, ?)};");
     ds->ExecuteNonQuery(commandText, params);
 
-    cout << endl << "done testExecuteNonQuery..." << endl;
+    
+    std::cout << endl << "outNum : " << outNum << endl;
+
+	//std::string strName = "Queenie";
+    //const std::wstring commandText = Ishtar::Swprintf(L"{CALL TableTest1_InsertOneData(%d, '%s', %d)};", 17, strName, 34000);
+ //   ds->ExecuteNonQuery(commandText);
+
+    std::cout << endl << "done testExecuteNonQuery..." << endl;
 }
 
 void testExecuteNonQuery2(Gt2::DataSource* ds)
 {
-    // 建立第一個 SQL 指令的參數
-    Gt2::DataParameters params1;
-    params1.AddInputParameter<SqlInt>(4); // 輸入參數：員工ID
-    params1.AddInputParameter<SqlNvarchar<20>>(L"Cindy"); // 輸入參數：員工姓名
-    params1.AddInputParameter<SqlInt>(20000); // 輸入參數：薪資
+    //// 建立第一個 SQL 指令的參數
+    //Gt2::DataParameters params1;
+    //params1.AddInputParameter<SqlInt>(4); // 輸入參數：員工ID
+    //params1.AddInputParameter<SqlNvarchar<20>>(Ishtar::Swprintf(L"Cindy")); // 輸入參數：員工姓名
+    //params1.AddInputParameter<SqlInt>(20000); // 輸入參數：薪資
 
-    // 執行第一個指令（新增員工資料）
-    Gt2::DataSource::ExecuteStub stub1 = ds->ExecuteNonQuery
-    (
-        L"{CALL TableTest1_InsertOneData(?, ?, ?)};",
-        params1,
-        Gt2::DataSource::ExecuteStub() // 無依賴
-    );
+    //// 執行第一個指令（新增員工資料）
+    //std::wstring commandText1 = Ishtar::Swprintf(L"{CALL TableTest1_InsertOneData(%d, '%s', %d)};", 4, "Cindy", 20000);
+    //Gt2::DataSource::ExecuteStub stub1 = ds->ExecuteNonQuery
+    //(
+    //    commandText1,
+    //    //params1,
+    //    Gt2::DataSource::ExecuteStub() // 無依賴
+    //);
+
+    //// 建立第二個 SQL 指令的參數（含輸出參數）
+    //Gt2::DataParameters params2;
+    //params2.AddInputParameter<SqlInt>(123); // 輸入參數：員工ID
+    //int affectedRows = 0;
+    //params2.AddOutputParameter<SqlInt>(affectedRows); // 輸出參數：受影響筆數
+
+    //// 執行第二個非查詢指令（刪除員工，依賴前一個完成）
+    //std::wstring commandText2 = Ishtar::Swprintf(L"{CALL TableTest1_DeleteByEmployeeID(%d)};", 123);
+    //Gt2::DataSource::ExecuteStub stub2 = ds->ExecuteNonQuery
+    //(
+    //    commandText2,
+    //    //params2,
+    //    stub1 // 依賴 stub1 完成後才執行
+    //);
 
 
-    // 建立第二個 SQL 指令的參數（含輸出參數）
-    Gt2::DataParameters params2;
-    params2.AddInputParameter<SqlInt>(123); // 輸入參數：員工ID
-    int affectedRows = 0;
-    params2.AddOutputParameter<SqlInt>(affectedRows); // 輸出參數：受影響筆數
+    //// 等待第二個指令完成
+    //while (!stub2.IsComplete()) 
+    //{
+    //    Ishtar::Thread::Sleep(100);
+    //}
 
-    // 執行第二個非查詢指令（刪除員工，依賴前一個完成）
-    Gt2::DataSource::ExecuteStub stub2 = ds->ExecuteNonQuery
-    (
-        L"{CALL TableTest1_DeleteByEmployeeID(?)};",
-        params2,
-        stub1 // 依賴 stub1 完成後才執行
-    );
+    //// 輸出受影響筆數
+    //std::cout << "Delete affected rows: " << affectedRows << std::endl;
+}
 
+void testExecuteNonQuery3(Gt2::DataSource* ds, Ishtar::Mutex& m_mutex)
+{
+    Gt2::DataSource::ExecuteStub stub1;
+    Gt2::DataSource::ExecuteStub stub2;
 
-    // 等待第二個指令完成
-    while (!stub2.IsComplete()) 
-    {
-        Ishtar::Thread::Sleep(100);
-    }
+    ISHTAR_LOCK_MUTEX(m_mutex); // 修改 ExecuteStub 是 non thread-safe 的，所以要鎖定
 
-    // 輸出受影響筆數
-    std::cout << "Delete affected rows: " << affectedRows << std::endl;
+    //// 執行第一個指令（新增員工資料）
+    //stub1 = ds->ExecuteNonQuery
+    //(
+    //    Ishtar::Swprintf(L"{CALL TableTest1_InsertOneData(%d, '%s', %d)};", 4, "Cindy", 20000),
+    //    Gt2::DataSource::ExecuteStub() // 無依賴
+    //);
+
+    //// 執行第二個非查詢指令（刪除員工，依賴前一個完成）
+    //stub2 = ds->ExecuteNonQuery
+    //(
+    //    Ishtar::Swprintf(L"{CALL TableTest1_DeleteByEmployeeID(%d)};", 123),
+    //    stub1 // 依賴 stub1 完成後才執行
+    //);
 }
 
 
@@ -1194,39 +1227,60 @@ void testExecuteReader(Gt2::DataSource* ds)
 {
     cout << "do testExecuteReader..." << endl;
 
-    const wstring commandText = Ishtar::Swprintf(L"{?=CALL TableTest1_GetAllEmployeeID};");
-    Gt2::DataReader dr = ds->ExecuteReader(commandText);
+    Gt2::DataParameters params;
+
+    params.AddInputParameter<Gt2::SqlInt>(17);
+    const std::wstring paramsName = Ishtar::Swprintf(L"Tom");
+    params.AddInputParameter<Gt2::SqlNvarchar<10>>(paramsName);
+    params.AddInputParameter<Gt2::SqlInt>(29000);
+    int outNum;
+    params.AddOutputParameter<Gt2::SqlInt>(outNum);
+
+    const std::wstring commandText = Ishtar::Swprintf(L"{?=CALL TableTest1_GetAllEmployeeID(?, ?, ?, ?)};");
+    //const std::wstring commandText = Ishtar::Swprintf(L"{?=CALL TableTest1_InsertOneData123(?, ?, ?)};");
+
+    Gt2::DataReader dr = ds->ExecuteReader(commandText, params);
 
     int column1;
     dr.BindColumn<Gt2::SqlInt>(1, column1);
+    int value ; // 取得存儲過程的回傳值
 
     std::cout << "DataReader : " << std::endl;
+
     while (dr.FetchNext())
     {
         // 逐筆讀取資料
+        //value = dr.GetReturnValue(); // 取得存儲過程的回傳值
         std::cout << "Employee ID: " << column1 << std::endl;
+
+        //std::cout << "Stored procedure return value: " << value << std::endl;
     }
 
-    cout << endl << "done testExecuteReader..." << endl;
+    //value = dr.GetReturnValue(); // 取得存儲過程的回傳值
+    //std::cout << "Stored procedure return value: " << value << std::endl;
+
+    //std::cout << "Stored procedure output seat value: " << outNum << std::endl;
+
+    std::cout << endl << "done testExecuteReader..." << std::endl;
 }
 
-
-
-// 定義一個資料結構，用於 BindFurtherRecord
-struct PlayerInfo {
+struct PlayerInfo 
+{
     int id;
     std::wstring name;
     int level;
     int experience;
 
     // 定義綁定關係
-    ISHTAR_ODBC_RECORD_DEFINE_4(
+    ISHTAR_ODBC_RECORD_DEFINE_4
+    (
         (Gt2::SqlInt, id),
         (Gt2::SqlNvarchar<50>, name),
         (Gt2::SqlInt, level),
         (Gt2::SqlInt, experience)
     )
 };
+// 定義一個資料結構，用於 BindFurtherRecord
 void testExecuteReader2(Gt2::DataSource* ds) 
 {
     try 
@@ -1246,7 +1300,8 @@ void testExecuteReader2(Gt2::DataSource* ds)
             reader.BindColumn<Gt2::SqlInt>(3, level);
 
             std::cout << "高等級玩家列表：" << std::endl;
-            while (reader.FetchNext()) {
+            while (reader.FetchNext()) 
+            {
                 std::wcout << L"ID: " << playerId << L", 名稱: " << playerName
                     << L", 等級: " << level << std::endl;
             }
@@ -1263,7 +1318,8 @@ void testExecuteReader2(Gt2::DataSource* ds)
             int exp;
 
             // 多欄位同時綁定
-            reader.BindColumns(
+            reader.BindColumns
+            (
                 Gt2::DataColumn<Gt2::SqlInt>(playerId),
                 Gt2::DataColumn<Gt2::SqlNvarchar<50>>(playerName),
                 Gt2::DataColumn<Gt2::SqlInt>(level),
@@ -1271,7 +1327,8 @@ void testExecuteReader2(Gt2::DataSource* ds)
                 Gt2::DataColumn<Gt2::SqlDatetime>(Gt2::Ignored()) // 忽略第5個欄位
             );
 
-            if (reader.FetchNext()) {
+            if (reader.FetchNext()) 
+            {
                 std::wcout << L"玩家資料：ID=" << playerId << L", 名稱=" << playerName
                     << L", 等級=" << level << L", 經驗值=" << exp << std::endl;
             }
@@ -1286,12 +1343,15 @@ void testExecuteReader2(Gt2::DataSource* ds)
             int level;
 
             // 從第2欄開始綁定（跳過第1欄 PlayerId）
-            reader.BindColumnsAt(2,
+            reader.BindColumnsAt
+            (
+                2,
                 Gt2::DataColumn<Gt2::SqlNvarchar<50>>(playerName),
                 Gt2::DataColumn<Gt2::SqlInt>(level)
             );
 
-            if (reader.FetchNext()) {
+            if (reader.FetchNext()) 
+            {
                 std::wcout << L"選擇性資料：名稱=" << playerName << L", 等級=" << level << std::endl;
             }
         }
@@ -1304,7 +1364,8 @@ void testExecuteReader2(Gt2::DataSource* ds)
             PlayerInfo player;
             reader.BindFurtherRecord(player);
 
-            if (reader.FetchNext()) {
+            if (reader.FetchNext()) 
+            {
                 std::wcout << L"玩家結構：ID=" << player.id << L", 名稱=" << player.name
                     << L", 等級=" << player.level << L", 經驗值=" << player.experience << std::endl;
             }
@@ -1322,7 +1383,8 @@ void testExecuteReader2(Gt2::DataSource* ds)
     }
     catch (const std::exception& e) 
     {
-        std::cerr << "資料庫錯誤: " << e.what() << std::endl;
+        //Gt2::Ignored()
+        std::cout << "資料庫錯誤: " << e.what() << std::endl;
     }
 
     //範例特點說明：
@@ -1338,26 +1400,490 @@ void testExecuteReader2(Gt2::DataSource* ds)
 
 }
 
-void testFunc() 
+void testExecuteReader3(Gt2::DataSource* ds)
 {
-    Gt2::DataSource* ds;
-    const wstring commandText = Ishtar::Swprintf(L"{?=CALL TableTest1_GetAllEmployeeID};");
+    cout << "do testExecuteReader3..." << endl;
+
+    const wstring commandText = Ishtar::Swprintf(L"{CALL TableTest1_GetEmployeeName};");
     Gt2::DataReader dr = ds->ExecuteReader(commandText);
 
-    int column1;
+    std::string strName1;
+    dr.BindColumn<Gt2::SqlVarchar<50>>(1, strName1);
+
+    std::cout << "DataReader : " << std::endl;
     while (dr.FetchNext())
     {
         // 逐筆讀取資料
-        std::cout << "Employee ID: " << column1 << std::endl;
+        std::cout << "Employee Name: " << strName1 << std::endl;
     }
+
+    cout << endl << "done testExecuteReader3..." << endl;
+}
+
+void testExecuteReader4(Gt2::DataSource* ds) 
+{
+    cout << "do testExecuteReader4..." << endl;
+
+    const wstring commandText = Ishtar::Swprintf(L"{CALL TableTest1_GetAllData};");
+    Gt2::DataReader dr = ds->ExecuteReader(commandText);
+
+    int intID;
+    std::string strName;
+	int intSalary;
+
+    dr.BindColumn<Gt2::SqlInt>(1, intID);
+    dr.BindColumn<Gt2::SqlVarchar<50>>(2, strName);
+    dr.BindColumn<Gt2::SqlInt>(3, intSalary);
+
+
+    std::cout << "DataReader : " << std::endl;
+    for (int i=0; dr.FetchNext(); ++i) 
+    {
+        std::cout << std::endl << "第 " << i << " 筆: " << std::endl;
+        // 逐筆讀取資料
+        std::cout << "Employee ID: " << intID << std::endl;
+        std::cout << "Employee Name: " << strName << std::endl;
+		std::cout << "Employee Salary: " << intSalary << std::endl;
+    }
+        
+    cout << endl << "done testExecuteReader4..." << endl;
+}
+
+void testFunc() 
+{
+    //Gt2::DataSource* ds;
+    //const wstring commandText = Ishtar::Swprintf(L"{?=CALL TableTest1_GetAllEmployeeID};");
+    //Gt2::DataReader dr = ds->ExecuteReader(commandText);
+
+    //int column1;
+    //while (dr.FetchNext())
+    //{
+    //    // 逐筆讀取資料
+    //    std::cout << "Employee ID: " << column1 << std::endl;
+    //}
+}
+
+// ===================================================== //
+// ===================================================== //
+
+
+
+
+
+void ShowRegisterDescription()
+{
+    std::cout << std::endl << "======= 註冊新使用者 =======" << std::endl;
+    std::cout << "請輸入您的使用者名稱：" << std::endl;
+    std::cout << "請輸入您的密碼：" << std::endl;
+    std::cout << "請輸入您的電子郵件：" << std::endl;
+    std::cout << "請輸入您的電話號碼：" << std::endl;
+}
+void ShowLoginDescription()
+{
+    std::cout << std::endl << "======= 登入系統 =======" << std::endl;
+    std::cout << "請輸入您的使用者名稱：" << std::endl;
+    std::cout << "請輸入您的密碼：" << std::endl;
 }
 
 
+class AccountingSystem
+{
+public:
+
+    AccountingSystem(Gt2::DataSource* ds) : m_ds(ds) {}
+
+    void TestDemo()
+    {
+        std::cout << "do AccountingSystem TestDemo..." << std::endl;
+
+        this->m_currentUserId = -1; // 未登入的使用者 ID
+
+        do 
+        {
+            if (this->m_currentUserId == -1) 
+            {
+				// 未登入，顯示初始選單
+                this->ShowInitMenu();
+
+                std::cin >> this->m_choice;
+
+                switch (this->m_choice)
+                {
+
+                    case 1:
+                    {
+                        // 登入流程
+                        ShowLoginDescription();
+                        //std::cin >> userInput.username >> userInput.password;
+                        //currentUserId = loginUser(userInput.username, userInput.password);
+                        break;
+                    }
+                    case 2:
+                    {
+                        // 註冊流程
+                        ShowRegisterDescription();
+
+                        struct UserInput 
+                        {
+                            std::string username;
+                            std::string password;
+                            std::string email;
+                        };
+
+                        UserInput userInput;
+
+                        std::cout << "請輸入您的使用者名稱：" << std::endl;
+                        std::cin >> userInput.username;
+
+                        std::cout << "請輸入您的密碼：" << std::endl;
+                        std::cin >> userInput.password;
+
+                        std::cout << "請輸入您的電子郵件：" << std::endl;
+                        std::cin >> userInput.email;
+
+                        //std::cout << userInput.username << std::endl;
+                        //std::cout << userInput.password << std::endl;
+                        //std::cout << userInput.email << std::endl;
+
+                        system("pause");
+                        system("cls");
+                        //this->RegisterUser(userInput.username, userInput.password, userInput.email);
+
+                        break;
+                    }
+                    case 0:
+                    {
+                        // 離開
+                        std::cout << "離開記帳系統。"<< std::endl;
+                        break;
+                    }
+                    default:
+                        std::cout << "無效的選擇，請重新輸入。" << std::endl;
+                }
+            }
+            else 
+            {
+				// 已登入，顯示記帳選單
+                ShowBillMenu();
+
+                std::cin >> this->m_choice;
+
+                switch (this->m_choice) {
+                case 3:
+                {
+                    // 新增記帳資料
+                    struct AccountingInput 
+                    {
+                        std::string date;
+                        std::string item;
+                        int amount;
+                        std::string type;
+                        std::string note;
+                    };
+                    AccountingInput accountingInput;
+
+                    cout << "請輸入日期 (YYYY-MM-DD): ";
+                    cin >> accountingInput.date;
+                    cout << "請輸入項目名稱: ";
+                    cin >> accountingInput.item;
+                    cout << "請輸入金額: ";
+                    cin >> accountingInput.amount;
+                    cout << "請輸入類型 (收入/支出): ";
+                    cin >> accountingInput.type;
+                    cout << "請輸入備註: ";
+                    cin.ignore(); // 忽略之前的換行符號
+                    std::getline(cin, accountingInput.note);
+
+                    //addAccountingData(currentUserId, accountingInput.date, accountingInput.item, accountingInput.amount, accountingInput.type, accountingInput.note);
+                    break;
+                }
+                case 4:
+                    // 查詢記帳資料
+                    //queryAccountingData(currentUserId);
+                    break;
+                case 5:
+                {
+                    // 修改記帳資料
+                    struct UpdateInput 
+                    {
+                        int id;
+                        int amount;
+                        std::string note;
+                    };
+                    UpdateInput updateInput;
+
+                    cout << "請輸入要修改的記帳資料 ID: ";
+                    cin >> updateInput.id;
+                    cout << "請輸入新的金額: ";
+                    cin >> updateInput.amount;
+                    cout << "請輸入新的備註: ";
+                    cin.ignore();
+                    std::getline(cin, updateInput.note);
+
+                    //updateAccountingData(currentUserId, updateInput.id, updateInput.amount, updateInput.note);
+                    break;
+                }
+                case 6:
+                {
+                    // 刪除記帳資料
+                    struct DeleteInput 
+                    {
+                        int id;
+                    };
+                    DeleteInput deleteInput;
+
+                    cout << "請輸入要刪除的記帳資料 ID: ";
+                    cin >> deleteInput.id;
+
+                    //deleteAccountingData(currentUserId, deleteInput.id);
+                    break;
+                }
+                case 7:
+                    // 登出
+                    std::cout << "登出。\n";
+                    this->m_currentUserId = -1;
+                    break;
+
+                case 0:
+                    std::cout << "離開記帳系統。\n";
+                    break;
+
+                default:
+                    std::cout << "無效的選擇，請重新輸入。\n";
+                }
+            }
+
+        } 
+        while (this->m_choice != 0);
+
+        std::cout << "done AccountingSystem TestDemo..." << std::endl;
+    }
+
+private:
+
+    Gt2::DataSource* m_ds;
+	int m_choice; // 使用者選擇的選項
+    int m_currentUserId; // 記錄目前登入的使用者 ID
+
+
+    void ShowInitMenu()
+    {
+        std::cout << std::endl << "======= 記帳系統 =======" << std::endl;
+        std::cout << "歡迎來到終端機記帳系統！" << std::endl;
+        std::cout << "1. 登入" << std::endl;
+        std::cout << "2. 註冊" << std::endl;
+        std::cout << "0. 離開" << std::endl;
+        std::cout << std::endl << "請輸入您的選擇 (0-2)：" << std::endl;
+    }
+
+    void ShowBillMenu()
+    {
+        std::cout << std::endl << "======= 記帳系統 =======" << std::endl;
+        std::cout << "3. 新增記帳資料" << std::endl;
+        std::cout << "4. 查詢記帳資料" << std::endl;
+        std::cout << "5. 修改記帳資料" << std::endl;
+        std::cout << "6. 刪除記帳資料" << std::endl;
+        std::cout << "7. 登出" << std::endl;
+        std::cout << "請輸入您的選擇 (3-7)：" << std::endl;
+
+        //std::cout << "7. 統計/報表" << std::endl;    
+    }
+
+    void ShowRegisterDescription()
+    {
+        std::cout << std::endl << "======= 註冊新使用者 =======" << std::endl;
+        std::cout << std::endl << "( 使用者名稱、密碼、電子郵件 )" << std::endl;
+    }
+
+    void ShowLoginDescription()
+    {
+        std::cout << std::endl << "======= 登入系統 =======" << std::endl;
+        std::cout << "請輸入您的使用者名稱：" << std::endl;
+        std::cout << "請輸入您的密碼：" << std::endl;
+    }
+
+
+    bool RegisterUser(const std::string& username, const std::string& password, const std::string& email)
+    {
+        cout << "\n===== 註冊新帳戶 =====\n";
+
+        // 構建 SQL 指令
+        std::wstring commandText = Ishtar::Swprintf(
+            L"INSERT INTO Users (Username, Password) VALUES ('%S', '%S')",
+            username.c_str(), password.c_str()
+        );
+
+        // 執行 SQL 指令
+        try {
+            m_ds->ExecuteNonQuery(commandText);
+            cout << "帳戶註冊成功！\n";
+            return true;
+        }
+        catch (const std::exception& e) {
+            std::cout << "資料庫錯誤: " << e.what() << std::endl;
+            return false;
+        }
+    }
+
+    int LoginUser(const std::string& username, const std::string& password)
+    {
+        cout << "\n===== 登入 =====\n";
+
+        // 構建 SQL 指令
+        std::wstring commandText = Ishtar::Swprintf(
+            L"SELECT Id FROM Users WHERE Username = '%S' AND Password = '%S'",
+            username.c_str(), password.c_str()
+        );
+
+        // 執行 SQL 指令
+        try {
+            Gt2::DataReader dr = m_ds->ExecuteReader(commandText);
+
+            int userId = -1;
+            dr.BindColumn<Gt2::SqlInt>(1, userId);
+
+            if (dr.FetchNext()) {
+                cout << "登入成功！\n";
+                return userId;
+            }
+            else {
+                cout << "使用者名稱或密碼錯誤。\n";
+                return -1;
+            }
+        }
+        catch (const std::exception& e) {
+            std::cout << "資料庫錯誤: " << e.what() << std::endl;
+            return -1;
+        }
+    }
+
+    void AddAccountingData(int userId, const std::string& date, const std::string& item, int amount, const std::string& type, const std::string& note)
+    {
+        cout << "\n===== 新增記帳資料 =====\n";
+
+        // 構建 SQL 指令
+        std::wstring commandText = Ishtar::Swprintf(
+            L"INSERT INTO Accounting (UserId, Date, Item, Amount, Type, Note) VALUES (%d, '%S', '%S', %d, '%S', '%S')",
+            userId, date.c_str(), item.c_str(), amount, type.c_str(), note.c_str()
+        );
+
+        // 執行 SQL 指令
+        try {
+            m_ds->ExecuteNonQuery(commandText);
+            cout << "記帳資料新增成功！\n";
+        }
+        catch (const std::exception& e) {
+            std::cout << "資料庫錯誤: " << e.what() << std::endl;
+        }
+    }
+
+    void QueryAccountingData(int userId)
+    {
+        cout << "\n===== 查詢記帳資料 =====\n";
+
+        std::wstring commandText = Ishtar::Swprintf(L"SELECT * FROM Accounting WHERE UserId = %d", userId);
+
+        try {
+            Gt2::DataReader dr = m_ds->ExecuteReader(commandText);
+
+            // 綁定欄位
+            std::string date, item, type, note;
+            int id, amount;
+
+            dr.BindColumn<Gt2::SqlInt>(1, id);
+            dr.BindColumn<Gt2::SqlVarchar<50>>(2, date);
+            dr.BindColumn<Gt2::SqlVarchar<50>>(3, item);
+            dr.BindColumn<Gt2::SqlInt>(4, amount);
+            dr.BindColumn<Gt2::SqlVarchar<10>>(5, type);
+            dr.BindColumn<Gt2::SqlVarchar<100>>(6, note);
+
+            // 顯示查詢結果
+            cout << "ID\t日期\t\t項目\t\t金額\t類型\t備註\n";
+            while (dr.FetchNext()) {
+                cout << id << "\t" << date << "\t\t" << item << "\t\t" << amount << "\t" << type << "\t" << note << "\n";
+            }
+        }
+        catch (const std::exception& e) {
+            std::cout << "資料庫錯誤: " << e.what() << std::endl;
+        }
+    }
+
+    void UpdateAccountingData(int userId, int id, int amount, const std::string& note)
+    {
+        cout << "\n===== 修改記帳資料 =====\n";
+
+        // 構建 SQL 指令
+        std::wstring commandText = Ishtar::Swprintf(
+            L"UPDATE Accounting SET Amount = %d, Note = '%S' WHERE Id = %d AND UserId = %d",
+            amount, note.c_str(), id, userId
+        );
+
+        // 執行 SQL 指令
+        try {
+            m_ds->ExecuteNonQuery(commandText);
+            cout << "記帳資料修改成功！\n";
+        }
+        catch (const std::exception& e) {
+            std::cout << "資料庫錯誤: " << e.what() << std::endl;
+        }
+    }
+
+    void DeleteAccountingData(int userId, int id)
+    {
+        cout << "\n===== 刪除記帳資料 =====\n";
+
+        // 構建 SQL 指令
+        std::wstring commandText = Ishtar::Swprintf(
+            L"DELETE FROM Accounting WHERE Id = %d AND UserId = %d",
+            id, userId
+        );
+
+        // 執行 SQL 指令
+        try {
+            m_ds->ExecuteNonQuery(commandText);
+            cout << "記帳資料刪除成功！\n";
+        }
+        catch (const std::exception& e) {
+            std::cout << "資料庫錯誤: " << e.what() << std::endl;
+        }
+    }
+
+    void GenerateReport(int userId)
+    {
+        cout << "\n===== 統計/報表 =====\n";
+
+        std::wstring commandText = Ishtar::Swprintf(L"SELECT Type, SUM(Amount) FROM Accounting WHERE UserId = %d GROUP BY Type", userId);
+
+        try {
+            Gt2::DataReader dr = m_ds->ExecuteReader(commandText);
+
+            // 綁定欄位
+            std::string type;
+            int totalAmount;
+
+            dr.BindColumn<Gt2::SqlVarchar<10>>(1, type);
+            dr.BindColumn<Gt2::SqlInt>(2, totalAmount);
+
+            // 顯示統計結果
+            cout << "類型\t總金額\n";
+            while (dr.FetchNext()) {
+                cout << type << "\t" << totalAmount << "\n";
+            }
+        }
+        catch (const std::exception& e) {
+            std::cout << "資料庫錯誤: " << e.what() << std::endl;
+        }
+    }
+};
+
+
 // ===================================================== //
+// ===================================================== //
+
 
 int main() 
 {
-    cout << "主程式開始！" << endl;
+    std::cout << "主程式開始！" << std::endl;
     
 
     // ===================================================== //
@@ -1409,27 +1935,39 @@ int main()
     // ==================== Database ======================= //
     // ===================================================== //
 
+
     Gt2::DatabaseManager dbm; // 建立資料庫連線的元件
     Ishtar::ThreadPool::Startup(10);
 
     Gt2::DataSource* ds; // 建立資料連線來源
-    ds = dbm.OpenDataSource("DSN=sqlserver;UID=gameuser;PWD=esabd250406", 10);
     //boost::shared_ptr<Gt2::DataSource> ds(dbm.OpenDataSource("DSN=sqlserver;UID=gameuser;PWD=esabd250406", 10));
+    ds = dbm.OpenDataSource("DSN=sqlserver;UID=gameuser;PWD=esabd250406", 10);
 
-    //testExecuteNonQuery(ds);
+    Ishtar::Mutex mutex1;
+
     //ISHTAR_TP_SUBMIT_WORK(testExecuteNonQuery, (ds), ());
-    ISHTAR_TP_SUBMIT_WORK(testExecuteNonQuery2, (ds), ());
+    //ISHTAR_TP_SUBMIT_WORK(testExecuteNonQuery2, (ds), ());
+    //ISHTAR_TP_SUBMIT_WORK(testExecuteReader3, (ds), ());
 
-    //ISHTAR_TP_SUBMIT_WORK(testExecuteReader, (ds), ());
-        
+	//testExecuteNonQuery(ds);
+    //testExecuteNonQuery2();
+    //testExecuteNonQuery3(ds, mutex1);
 
+    testExecuteReader(ds);
+
+    //testExecuteReader3(ds);
+    //testExecuteReader4(ds);
+
+
+    //AccountingSystem accountingSystem(ds);
+    //accountingSystem.TestDemo();
 
 
     // ===================================================== //
     // ===================================================== //
 
     //system("pause");
-    cout << "主程式結束！" << endl;
+    std::cout << "主程式結束！" << std::endl;
     return 0;
 
     // 查看目前使用的編譯器
